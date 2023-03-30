@@ -1,3 +1,5 @@
+nltk
+tweepy
 torch
 torchvision
 torchaudio
