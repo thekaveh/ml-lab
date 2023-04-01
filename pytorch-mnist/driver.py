@@ -20,7 +20,7 @@ class Driver:
         I_train = np.random.randint(
             low=0
             , high=data_train.data.shape[0]
-            , size=int(data_train.data.shape[0] * Consts.DATASET_SAMPLING_RATIO))
+            , size=int(data_train.data.shape[0] * Consts.DS_SAMPLING_RATIO))
 
         loader_train = DataLoader(
             dataset=data_train
@@ -33,7 +33,7 @@ class Driver:
             , download=True
             , transform=thv.transforms.ToTensor())
 
-        I_val = np.arange(0, int(data_val.data.shape[0] * Consts.DATASET_SAMPLING_RATIO))
+        I_val = np.arange(0, int(data_val.data.shape[0] * Consts.DS_SAMPLING_RATIO))
 
         loader_val = DataLoader(
             dataset=data_val
