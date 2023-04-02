@@ -7,19 +7,29 @@ sns.set()
 
 class Utils:
     @staticmethod
-    def two_line_plot(fig_size, title, x_axis_label, x, y1_legend, y_axis_label, y1, y2_legend, y2):
+    def multi_line_plot(fig_size, title, x_axis_label, x, y_axis_label, yss_legend, yss, x_ticks_inc=20):
         _ = plt.figure(figsize = fig_size)
+        
+        ls = ["-", "--", "-.", ":"]
+        cs = sns.color_palette(n_colors=len(yss))
 
-        ax = sns.lineplot(label=y1_legend, x=x, y=y1)
-        ax = sns.lineplot(label=y2_legend, x=x, y=y2)
+        for ys_idx, (ys, ys_legend) in enumerate(zip(yss, yss_legend)):
+            for y_idx, y in enumerate(ys):
+                ax = sns.lineplot(
+                    x=x
+                    , y=y
+                    , color=cs[ys_idx]
+                    , linestyle=ls[y_idx]
+                    , label=ys_legend[y_idx]
+                )
 
         ax.set_xlim(0, len(x))
         ax.set_title(title, fontsize=14)
-        ax.set_xticks(range(0, len(x), 20))
         ax.set_ylabel(y_axis_label, fontsize=14)
         ax.set_xlabel(x_axis_label, fontsize=14)
+        ax.set_xticks(range(0, len(x), x_ticks_inc))
         
-        plt.legend(fontsize='x-large')
+        plt.legend(fontsize='large')
         plt.tight_layout()
         plt.show();
 

@@ -57,6 +57,8 @@ class FeedFwdNNModel():
             )
 
     def train_and_validate(self):
+        print(self)
+        
         iter_idx: int = 0
         iteration_data = []
 
@@ -131,4 +133,4 @@ class FeedFwdNNModel():
         )
     
     def __str__(self):
-        return f"device={self.device_name}, epochs={self.n_epochs}, lr={self.etha}, optim={self.optimizer_alg}, dropout={self.dropout_p}"
+        return f"model={{sizes={[self.input_size] + self.hidden_sizes + [self.output_size]}, device={self.device_name}, epochs={self.n_epochs}, lr={self.etha}, optim={self.optimizer_alg}, dropout={self.dropout_p}}}"
