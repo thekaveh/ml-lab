@@ -67,7 +67,7 @@ class FeedFwdNN:
         self.L2 = ReluLayer(feature_size=self.feature_size_out)
         self.L3 = SoftmaxCrossEntropyLayer(feature_size=self.feature_size_out)
 
-        print(f"NeuralNet.__init__:\n\t+ epochs: {self.n_epochs}\n\t+ mini_batch_size: {self.mini_batch_size}\n\t+ lr: {self.lr}\n")
+        print(f"FeedFwdNN.__init__:\n\t+ n_epochs: {self.n_epochs}\n\t+ mini_batch_size: {self.mini_batch_size}\n\t+ lr: {self.lr}\n")
 
     def train_and_validate(self):
         iter_idx: int = 0
