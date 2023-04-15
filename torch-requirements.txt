@@ -1,0 +1,11 @@
+torchvision
+torchaudio
+torchtext
+torchsummary
+torchmetrics
+torch-scatter
+torch-sparse
+torch-cluster
+torch-spline-conv
+torch_geometric
+transformers
