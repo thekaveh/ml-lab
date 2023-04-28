@@ -1,0 +1,125 @@
+import torch
+import numpy as np
+
+from tqdm import tqdm
+from torch import nn, optim
+import torch_geometric as pyg
+from typing import List, Union
+from dataclasses import dataclass
+from torch.utils.data import DataLoader
+
+@dataclass(frozen=True, kw_only=True, slots=True)
+class NNTrainParams:
+    optim           : str
+    n_epochs        : int
+    learning_rate   : float
+    train_loader    : DataLoader
+    val_loader      : Union[DataLoader, None] = None
+    
+    def __str__(self):
+        return f"[epochs={self.n_epochs}, lr={self.learning_rate}, optim={self.optim}]"
+
+@dataclass(frozen=True, kw_only=True, slots=True)
+class NNIterationDataPoint:
+    iter_idx    : int
+    epoch_idx   : int
+    batch_idx   : int  
+    train_loss  : float
+    train_error : float
+    val_loss    : Union[float, None] = None
+    val_error   : Union[float, None] = None
+
+class NNModel():
+    def __init__(self, net: nn.Module, device: str = "cpu"):
+        self.device = torch.device(device)
+        
+        self.net = net.to(self.device)
+        self.loss = nn.CrossEntropyLoss().to(self.device)
+
+    def train(self, params: NNTrainParams):
+        train_str = f"{self.net} x {params}"
+        validate = params.val_loader is not None
+
+        if params.optim == "sgd":
+            optimizer = optim.SGD(
+                lr=params.learning_rate
+                , params=self.net.parameters()
+            )
+        elif params.optim == "adam":
+            optimizer = optim.Adam(
+                lr=params.learning_rate
+                , params=self.net.parameters()
+            )
+        
+        iter_idx: int = 0
+        idps    : List[IterationDataPoint] = []
+
+        tqdm_bar = tqdm(
+            desc=train_str
+            , total=int(params.n_epochs * len(params.train_loader))
+        )
+
+        for epoch_idx in range(params.n_epochs):
+            for batch_idx, batch in enumerate(params.train_loader):
+                self.net.train()
+                self.net.zero_grad()
+                    
+                X, Y, Y_hat = self.iterate(batch)
+                
+                train_loss = self.loss(Y_hat, Y)          
+                train_error = 1 - (Y_hat.max(dim=1)[1] == Y).sum().item() / Y.size(0)
+
+                train_loss.backward()
+                optimizer.step()
+
+                if validate:
+                    val_loss, val_error = self.evaluate(loader=params.val_loader)
+                else:
+                    val_loss, val_error = None, None
+
+                idp = NNIterationDataPoint(
+                    epoch_idx=epoch_idx
+                    , iter_idx=iter_idx
+                    , val_loss=val_loss
+                    , batch_idx=batch_idx
+                    , val_error=val_error
+                    , train_error=train_error
+                    , train_loss=float(train_loss)
+                )
+
+                idps.append(idp)
+
+                iter_idx += 1
+                tqdm_bar.update(1)
+                tqdm_bar.set_postfix_str(f"error: {val_error if val_error is not None else train_error:.4f}")
+        
+        return train_str, np.array(idps)
+
+    def evaluate(self, loader: DataLoader):
+        self.net.eval()
+        loss_vals, err_vals = [], []
+
+        with torch.no_grad():
+            for _, batch in enumerate(loader):
+                X, Y, Y_hat = self.iterate(batch)
+                
+                loss = self.loss(Y_hat, Y)              
+                loss_vals.append(float(loss))
+
+                error = 1 - (Y_hat.max(dim=1)[1] == Y).sum().item() / Y.size(0)
+                err_vals.append(float(error))
+
+        return (
+            np.mean(loss_vals)
+            , np.mean(err_vals)
+        )
+        
+    def iterate(self, batch):
+        X, Y = self.net.unpack_batch(batch)
+        
+        X = tuple(x.to(self.device) for x in X)
+        Y = Y.to(self.device)
+        
+        Y_hat = self.net(*X)
+        
+        return X, Y, Y_hat
