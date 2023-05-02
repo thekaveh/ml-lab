@@ -1,9 +1,9 @@
 import torch
 import numpy as np
+import torch_geometric as pyg
 
 from tqdm import tqdm
 from torch import nn, optim
-import torch_geometric as pyg
 from typing import List, Union
 from dataclasses import dataclass
 from torch.utils.data import DataLoader
@@ -12,12 +12,13 @@ from torch.utils.data import DataLoader
 class NNTrainParams:
     optim           : str
     n_epochs        : int
+    weight_decay    : float
     learning_rate   : float
     train_loader    : DataLoader
     val_loader      : Union[DataLoader, None] = None
     
     def __str__(self):
-        return f"[epochs={self.n_epochs}, lr={self.learning_rate}, optim={self.optim}]"
+        return f"Train=[epochs={self.n_epochs}, optim={self.optim}, lr={self.learning_rate:1.0e}, weight_decay={self.weight_decay:1.0e}]"
 
 @dataclass(frozen=True, kw_only=True, slots=True)
 class NNIterationDataPoint:
@@ -44,11 +45,13 @@ class NNModel():
             optimizer = optim.SGD(
                 lr=params.learning_rate
                 , params=self.net.parameters()
+                , weight_decay=params.weight_decay
             )
         elif params.optim == "adam":
             optimizer = optim.Adam(
                 lr=params.learning_rate
                 , params=self.net.parameters()
+                , weight_decay=params.weight_decay
             )
         
         iter_idx: int = 0

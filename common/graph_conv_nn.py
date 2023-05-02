@@ -5,15 +5,15 @@ import torch.nn.functional as F
 from torch import nn
 from .nn_params import NNParams
 
-class GraphSageNN(nn.Module):
+class GraphConvNN(nn.Module):
     def __init__(self, params: NNParams):
-        super(GraphSageNN, self).__init__()
+        super(GraphConvNN, self).__init__()
         
         self.params = params
         
         self.layers = nn.ModuleList(
             [
-                pyg.nn.SAGEConv(
+                pyg.nn.GCNConv(
                     in_channels=in_dim
                     , out_channels=out_dim
                 )   for in_dim, out_dim in zip(self.params.dims, self.params.dims[1:])
@@ -36,4 +36,4 @@ class GraphSageNN(nn.Module):
         return (X, E), Y
     
     def __str__(self):
-        return f"GraphSageNN={self.params}"
+        return f"GraphConvNN={self.params}"
