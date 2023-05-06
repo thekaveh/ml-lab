@@ -42,7 +42,7 @@ class Utils:
         )
         
     @staticmethod
-    def scatter_plot(vm, figsize=(15, 15)):
+    def scatter_plot(vm, figsize=(15, 15), title_size = 15, label_size = 10):
         f, sub_plt = plt.subplots(nrows=1, ncols=1, figsize=figsize)
 
         for t_idx, _ in enumerate(vm["ts"]["uni_vals"]):
@@ -56,10 +56,11 @@ class Utils:
 
         sub_plt.set_xticks([])
         sub_plt.set_yticks([])
-        sub_plt.set_xlabel(vm["xs"]["label"])
-        sub_plt.set_ylabel(vm["ys"]["label"])
-        sub_plt.set_title(vm["title"])
-        sub_plt.legend();
+        sub_plt.set_xlabel(vm["xs"]["label"], fontsize=label_size)
+        sub_plt.set_ylabel(vm["ys"]["label"], fontsize=label_size)
+        sub_plt.set_title(vm["title"], fontsize=title_size)
+        sub_plt.legend(fontsize='large')
+        plt.tight_layout();
 
     @staticmethod
     def get_scatter_plot_vm(data, title, col_xs, label_xs, col_ys, label_ys, col_ts, labels_ts, colors_ts, uni_ts):
