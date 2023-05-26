@@ -1,27 +1,68 @@
+from __future__ import annotations
+
 import torch
 import numpy as np
 import torch_geometric as pyg
 
+from enum import Enum
 from tqdm import tqdm
-from torch import nn, optim
 from sklearn import metrics
+from torch import nn, optim
 from torch.utils.data import DataLoader
 from typing import List, Optional, Tuple
 from dataclasses import dataclass, field, replace
 
+class Optim(Enum):
+    SGD     = "sgd"
+    ADAM    = "adam"
+    
+    def __str__(self):
+        return self.value
+
+    def __repr__(self):
+        return self.value
+    
+class Loss(Enum):
+    CROSS_ENTROPY           = "ce"
+    MEAN_SQUARED_ERROR      = "mse"
+    BINARY_CROSS_ENTROPY    = "bce"
+    NEGATIVE_LOG_LIKELIHOOD = "nll"
+    
+    @staticmethod
+    def to_loss_fn(value: Loss):
+        if value == Loss.CROSS_ENTROPY:
+            return nn.CrossEntropyLoss()
+        elif value == Loss.BINARY_CROSS_ENTROPY:
+            return nn.BCELoss()
+        elif value == Loss.MEAN_SQUARED_ERROR:
+            return nn.MSELoss()
+        elif value == Loss.NEGATIVE_LOG_LIKELIHOOD:
+            return nn.NLLLoss()
+        else:
+            return nn.CrossEntropyLoss()
+
 @dataclass(frozen=True, kw_only=True, slots=True)
 class NNTrainParams:
-    optim               : str
     n_epochs            : int
     weight_decay        : float
     learning_rate       : float
+    
     train_loader        : DataLoader
-    snapshot_interval   : Optional[int]                 = None
-    val_loader          : Optional[DataLoader]          = None
-    snapshot_x          : Optional[Tuple[np.ndarray]]   = None
+    val_loader          : Optional[DataLoader]  = None
+    
+    val_interval        : Optional[int]         = None
+    snapshot_interval   : Optional[int]         = None
+    
+    optim               : Optim                 = Optim.ADAM
     
     def __str__(self):
-        return f"Train=[epochs={self.n_epochs}, optim={self.optim}, lr={self.learning_rate:1.0e}, weight_decay={self.weight_decay:1.0e}]"
+        return f"Train=[n_epochs={self.n_epochs}, optim={self.optim}, lr={self.learning_rate:1.0e}, weight_decay={self.weight_decay:1.0e}]"
+        
+@dataclass(frozen=True, kw_only=True, slots=True)
+class NNSnapshotDataPoint:
+    y           : np.ndarray
+    y_hat       : np.ndarray
+    y_hat_log   : np.ndarray
     
 @dataclass(frozen=True, kw_only=True, slots=True)
 class NNEvaluationDataPoint:
@@ -29,8 +70,8 @@ class NNEvaluationDataPoint:
     recall      : float
     accuracy    : float
     precision   : float
-    loss        : Optional[float] = None
-    error       : Optional[float] = None
+    loss        : Optional[float]               = None
+    error       : Optional[float]               = None
     
     def with_loss(self, value: float):
         return replace(self, loss=value)
@@ -63,40 +104,43 @@ class NNEvaluationDataPoint:
             ret = ret.with_error(np.mean([edp.error for edp in edps if edp.error is not None]))
 
         return ret
-        
-@dataclass(frozen=True, kw_only=True, slots=True)
-class NNSnapshotDataPoint:
-    y_hat   : np.ndarray
-    y_log   : np.ndarray
 
 @dataclass(frozen=True, kw_only=True, slots=True)
 class NNIterationDataPoint:
-    iter_idx    : int
-    epoch_idx   : int
-    batch_idx   : int  
-    train_edp   : NNEvaluationDataPoint
-    val_edp     : Optional[NNEvaluationDataPoint]   = None
-    snapshot    : Optional[NNSnapshotDataPoint]     = None
+    iter_idx        : int
+    epoch_idx       : int
+    batch_idx       : int  
+    train_edp       : NNEvaluationDataPoint
+    val_edp         : Optional[NNEvaluationDataPoint]   = None
+    val_snapshot    : Optional[NNSnapshotDataPoint]     = None
 
 class NNModel():
-    def __init__(self, net: nn.Module, device: str = "cpu"):
+    def __init__(
+        self
+        , net   : nn.Module
+        , device: str       = "cpu"
+        , loss  : Loss      = Loss.CROSS_ENTROPY
+    ):
         self.device = torch.device(device)
         
-        self.net = net.to(self.device)
-        self.loss = nn.CrossEntropyLoss().to(self.device)
+        self.net        = net.to(self.device)
+        self.loss_fn    = Loss.to_loss_fn(loss).to(self.device)
 
     def train(self, params: NNTrainParams):
-        train_str = f"{self.net} x {params}"
-        validate = params.val_loader is not None
-        snapshot = params.snapshot_x is not None
+        train_str   = f"{self.net} x {params}"
+        validate    = params.val_loader is not None
+        
+        if validate:
+            snapshot_x, snapshot_y  = self.net.unpack_batch(next(iter(params.val_loader)))
+            snapshot_x, snapshot_y  = tuple(x.numpy() for x in snapshot_x), snapshot_y.numpy()
 
-        if params.optim == "sgd":
+        if params.optim == Optim.SGD:
             optimizer = optim.SGD(
                 lr=params.learning_rate
                 , params=self.net.parameters()
                 , weight_decay=params.weight_decay
             )
-        elif params.optim == "adam":
+        elif params.optim == Optim.ADAM:
             optimizer = optim.Adam(
                 lr=params.learning_rate
                 , params=self.net.parameters()
@@ -120,36 +164,38 @@ class NNModel():
                         
                     X, Y, Y_hat_log, Y_hat = self.__fwd_pass(batch)
                     
-                    train_loss = self.loss(Y_hat_log, Y)
+                    train_loss = self.loss_fn(Y_hat_log, Y)
                     
                     train_edp = (
                         NNEvaluationDataPoint.of(Y=Y.numpy(), Y_hat=Y_hat.numpy())
                             .with_loss(value=float(train_loss))
                             .with_error(value=float(1 - (Y_hat == Y).sum().item() / Y.size(0)))
                     )
-                        
-                    val_edp = self.evaluate(loader=params.val_loader) if validate else None
-                        
-                    if snapshot and (
-                        params.snapshot_interval is None or (
-                            (params.snapshot_interval is not None)
-                            and (idx_iter % params.snapshot_interval == 0)
-                        )
-                    ):
-                        snapshot_y_log, snapshot_y_hat = self.predict(X=params.snapshot_x)
-                        
-                        snapshot = NNSnapshotDataPoint(y_hat=snapshot_y_hat, y_log=snapshot_y_log)
+                
+                    if validate and params.val_interval is not None and (idx_iter + 1) % params.val_interval == 0:
+                        val_edp = self.evaluate(loader=params.val_loader)
                     else:
-                        snapshot = None
+                        val_edp = None
+                        
+                    if validate and params.snapshot_interval is not None and (idx_iter + 1) % params.snapshot_interval == 0:
+                        snapshot_y_hat_log, snapshot_y_hat = self.predict(X=snapshot_x)
+                        
+                        val_snapshot = NNSnapshotDataPoint(
+                            y=snapshot_y
+                            , y_hat=snapshot_y_hat
+                            , y_hat_log=snapshot_y_hat_log
+                        )
+                    else:
+                        val_snapshot = None
 
                     idps.append(
                         NNIterationDataPoint(
                             val_edp=val_edp
-                            , snapshot=snapshot
                             , iter_idx=idx_iter
                             , epoch_idx=idx_epoch
                             , batch_idx=batch_idx
                             , train_edp=train_edp
+                            , val_snapshot=val_snapshot
                         )
                     )
 
@@ -158,7 +204,13 @@ class NNModel():
 
                     idx_iter += 1
                     tqdm_bar.update(1)
-                    tqdm_bar.set_postfix_str(f"error: {val_edp.error if val_edp is not None else train_edp.error:.4f}")
+                    tqdm_bar.set_postfix_str(
+                        "train_error: {train_error} - val_error: {val_error}"
+                            .format(
+                                train_error=f"{train_edp.error:.4f}"
+                                , val_error=f"{val_edp.error:.4f}" if val_edp is not None else "-"
+                            )
+                    )
         
         return train_str, np.array(idps)
 
@@ -172,7 +224,7 @@ class NNModel():
                 
                 edps.append(
                     NNEvaluationDataPoint.of(Y=Y.numpy(), Y_hat=Y_hat.numpy())
-                        .with_loss(value=float(self.loss(Y_hat_log, Y)))
+                        .with_loss(value=float(self.loss_fn(Y_hat_log, Y)))
                         .with_error(value=float(1 - (Y_hat == Y).sum().item() / Y.size(0)))
                 )
 

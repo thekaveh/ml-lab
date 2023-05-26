@@ -4,6 +4,7 @@ import torch.nn.functional as F
 
 from torch import nn
 from .nn_params import NNParams
+from .nn_activation_fn import NNActivationFn
 
 class FeedFwdNN(nn.Module):
     def __init__(self, params: NNParams):
@@ -25,7 +26,7 @@ class FeedFwdNN(nn.Module):
         
         for layer in self.layers[:-1]:
             X = layer(X)
-            X = F.relu(X)
+            X = NNActivationFn.to_activation_fn(self.params.activation_fn)(X)
             X = F.dropout(X, p=self.params.dropout_prob, training=self.training)
                 
         X = self.layers[-1](X)

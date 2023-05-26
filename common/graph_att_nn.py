@@ -6,6 +6,7 @@ from dataclasses import dataclass, field
 
 from torch import nn
 from .nn_params import NNParams
+from .nn_activation_fn import NNActivationFn
 
 @dataclass(frozen=True, kw_only=True, slots=True)
 class GraphAttNNParams(NNParams):
@@ -39,7 +40,7 @@ class GraphAttNN(nn.Module):
     def forward(self, X: torch.Tensor, E: torch.Tensor) -> torch.Tensor:
         for layer in self.layers[:-1]:
             X = layer(X, E)
-            X = F.relu(X)
+            X = NNActivationFn.to_activation_fn(self.params.activation_fn)(X)
             X = F.dropout(X, p=self.params.dropout_prob, training=self.training)
                 
         X = self.layers[-1](X, E)
