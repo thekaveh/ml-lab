@@ -13,24 +13,20 @@ class NNActivationFn(Enum):
     SIGMOID     = 'sigmoid'
     SOFTPLUS    = 'softplus'
     LEAKY_RELU  = 'leaky_relu'
-    
-    _map = {
-        ELU         : F.elu
-        , SELU      : F.selu
-        , TANH      : F.tanh
-        , RELU      : F.relu
-        , SOFTMAX   : F.softmax
-        , SIGMOID   : F.sigmoid
-        , SOFTPLUS  : F.softplus
-        , LEAKY_RELU: F.leaky_relu
-    }
-    
+
     def __str__(self):
         return self.value
-
+    
     def __repr__(self):
-        return self.value
+        return str(self)
 
-    @staticmethod
-    def to_activation_fn(value: NNActivationFn):
-        return NNActivationFn._map.get(value, None)
+    def __call__(self):
+        match self:
+            case NNActivationFn.ELU         : return F.elu
+            case NNActivationFn.SELU        : return F.selu
+            case NNActivationFn.TANH        : return F.tanh
+            case NNActivationFn.RELU        : return F.relu
+            case NNActivationFn.SOFTMAX     : return F.softmax
+            case NNActivationFn.SIGMOID     : return F.sigmoid
+            case NNActivationFn.SOFTPLUS    : return F.softplus
+            case NNActivationFn.LEAKY_RELU  : return F.leaky_relu

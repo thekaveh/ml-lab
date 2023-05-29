@@ -36,14 +36,6 @@ class Utils:
         plt.legend(fontsize='large')
         plt.tight_layout()
         plt.show();
-
-    @staticmethod
-    def get_device_name():
-        return (
-            "mps" if hasattr(torch.backends, "mps") and torch.backends.mps.is_available()
-            else "gpu" if torch.cuda.is_available()
-            else "cpu"
-        )
     
     @staticmethod
     def scatter_plot_hv(vm):

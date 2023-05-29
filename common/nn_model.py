@@ -13,6 +13,29 @@ from torch.utils.data import DataLoader
 from typing import List, Optional, Tuple, Union
 from dataclasses import dataclass, field, replace
 
+class Device(Enum):
+    CPU     = "cpu"
+    MPS     = "mps"
+    CUDA    = "cuda"
+    
+    def __str__(self):
+        return self.value
+    
+    def __repr__(self):
+        return str(self)
+
+    def __call__(self):
+        return torch.device(self.value)
+
+    @staticmethod
+    def get():
+        if hasattr(torch.backends, "mps") and torch.backends.mps.is_available():
+            return Device.MPS
+        elif torch.cuda.is_available():
+            return Device.CUDA
+        else:
+            return Device.CPU
+
 class Optim(Enum):
     SGD             = "sgd"
     ADAM            = "adam"
@@ -23,57 +46,104 @@ class Optim(Enum):
         return self.value
 
     def __repr__(self):
-        return self.value
+        return str(self)
+    
+    def __call__(self, net: nn.Module, params: NNOptimParams):
+        assert net is not None and params is not None
+        
+        match self:
+            case Optim.SGD:
+                return optim.SGD(
+                    lr=params.lr_start
+                    , params=net.parameters()
+                    , momentum=params.momentum
+                    , weight_decay=params.weight_decay
+                )
+            case Optim.ADAM:
+                return optim.Adam(
+                    lr=params.lr_start
+                    , betas=params.momentum
+                    , params=net.parameters()
+                    , weight_decay=params.weight_decay
+                )
+            case Optim.ADAM_AMSGRAD:
+                return optim.Adam(
+                    amsgrad=True
+                    , lr=params.lr_start
+                    , betas=params.momentum
+                    , params=net.parameters()
+                    , weight_decay=params.weight_decay
+                )
+            case Optim.SGD_NESTEROV:
+                return optim.SGD(
+                    nesterov=True
+                    , lr=params.lr_start
+                    , params=net.parameters()
+                    , momentum=params.momentum
+                    , weight_decay=params.weight_decay
+                )
     
 class Loss(Enum):
-    CROSS_ENTROPY           = "ce"
-    MEAN_SQUARED_ERROR      = "mse"
-    BINARY_CROSS_ENTROPY    = "bce"
-    NEGATIVE_LOG_LIKELIHOOD = "nll"
-    
-    @staticmethod
-    def to_loss_fn(value: Loss):
-        if value == Loss.CROSS_ENTROPY:
-            return nn.CrossEntropyLoss()
-        elif value == Loss.BINARY_CROSS_ENTROPY:
-            return nn.BCELoss()
-        elif value == Loss.MEAN_SQUARED_ERROR:
-            return nn.MSELoss()
-        elif value == Loss.NEGATIVE_LOG_LIKELIHOOD:
-            return nn.NLLLoss()
-        else:
-            return nn.CrossEntropyLoss()
+    CROSS_ENTROPY           = "cross_entropy"
+    MEAN_SQUARED_ERROR      = "mean_squared_error"
+    BINARY_CROSS_ENTROPY    = "binary_cross_entropy"
+    NEGATIVE_LOG_LIKELIHOOD = "negative_log_likelihood"
 
+    def __str__(self):
+        return self.value
+    
+    def __repr__(self):
+        return str(self)
+
+    def __call__(self):
+        match self:
+            case Loss.CROSS_ENTROPY             : return nn.CrossEntropyLoss()
+            case Loss.MEAN_SQUARED_ERROR        : return nn.BCELoss()
+            case Loss.BINARY_CROSS_ENTROPY      : return nn.MSELoss()
+            case Loss.NEGATIVE_LOG_LIKELIHOOD   : return nn.NLLLoss()
+
+@dataclass(frozen=True, kw_only=True, slots=True)
+class NNOptimParams:
+    lr_start    : float
+    weight_decay: float
+    momentum    : Union[float, Tuple[float, float]]
+    
+    def __str__(self):
+        return f"[lr_start={self.lr_start:1.0e}, weight_decay={self.weight_decay:1.0e}, momentum={self.momentum}]"
+
+@dataclass(frozen=True, kw_only=True, slots=True)
+class NNSchedulerParams:
+    patience    : int
+    factor      : float
+    threshold   : float
+    
+    def __str__(self):
+        return f"[patience={self.patience}, factor={self.factor:1.0e}, threshold={self.threshold:1.0e}]"
+    
 @dataclass(frozen=True, kw_only=True, slots=True)
 class NNTrainParams:
     n_epochs            : int
-    weight_decay        : float
-    learning_rate       : float
-    momentum            : Union[float, Tuple[float, float]]
-    
-    scheduler_patience  : int                   = 5
-    scheduler_factor    : float                 = 0.9
-    scheduler_threshold : float                 = 1e-4
+    optim               : Optim                 = Optim.ADAM
+    scheduler_params    : NNSchedulerParams     = NNSchedulerParams(patience=5, factor=9e-1, threshold=1e-4)
+    optim_params        : NNOptimParams         = NNOptimParams(lr_start=9e-1, momentum=(0.9, 0.999), weight_decay=5e-4)
     
     train_loader        : DataLoader
     val_loader          : Optional[DataLoader]  = None
     
     snapshot_epoch_delta: Optional[int]         = None
     
-    optim               : Optim                 = Optim.ADAM
-    
     def is_valid(self):
-        if optim == Optim.SGD or optim == Optim.SGD_NESTEROV:
-            return isinstance(self.momentum, float)
-        elif optim == Optim.ADAM or optim == Optim.ADAM_AMSGRAD:
+        if self.optim == Optim.SGD or self.optim == Optim.SGD_NESTEROV:
+            return isinstance(self.optim_params.momentum, float)
+        elif self.optim == Optim.ADAM or self.optim == Optim.ADAM_AMSGRAD:
             return (
-                isinstance(self.momentum, tuple)
-                and len(self.momentum) == 2
-                and all(isinstance(x, float) for x in self.momentum)
+                isinstance(self.optim_params.momentum, tuple)
+                and len(self.optim_params.momentum) == 2
+                and all(isinstance(x, float) for x in self.optim_params.momentum)
             )
     
     def __str__(self):
-        return f"Train=[n_epochs={self.n_epochs}, optim={self.optim}, lr={self.learning_rate:1.0e}, weight_decay={self.weight_decay:1.0e}]"
+        return f"Train=[n_epochs={self.n_epochs}, optim={self.optim}] x OptimParams={self.optim_params} x SchedulerParams={self.scheduler_params}"
         
 @dataclass(frozen=True, kw_only=True, slots=True)
 class NNSnapshotDataPoint:
@@ -136,65 +206,58 @@ class NNIterationDataPoint:
     
     def with_val_snapshot(self, value: NNSnapshotDataPoint):
         return replace(self, val_snapshot=value)
+    
+@dataclass(frozen=True, kw_only=True, slots=True)
+class NNModelParams:
+    loss  : Loss
+    device: Device
+    
+    def __str__(self):
+        return f"[device={self.device}, loss={self.loss}]"
+    
+    def is_valid(self):
+        return (
+            self.device is not None
+            and self.loss is not None
+        )
 
 class NNModel():
     def __init__(
         self
         , net   : nn.Module
-        , device: str       = "cpu"
-        , loss  : Loss      = Loss.CROSS_ENTROPY
+        , params: NNModelParams = NNModelParams(device=Device.CPU, loss=Loss.CROSS_ENTROPY)
     ):
-        self.device     = torch.device(device)
+        assert (
+            net is not None
+            and params is not None
+            and params.is_valid()
+        )
+         
+        self.params     = params
         
+        self.device     = self.params.device()
         self.net        = net.to(self.device)
-        self.loss_fn    = Loss.to_loss_fn(loss).to(self.device)
+        self.loss_fn    = self.params.loss().to(self.device)
 
     def train(self, params: NNTrainParams):
         assert params is not None and params.is_valid()
         
-        train_str   = f"{self.net} x {params}"
+        train_str   = f"{self.params} x {self.net} x {params}"
         validate    = params.val_loader is not None
         snapshot    = validate and params.snapshot_epoch_delta is not None
         
         if snapshot:
             snapshot_x, snapshot_y  = self.net.unpack_batch(next(iter(params.val_loader)))
             snapshot_x, snapshot_y  = tuple(x.numpy() for x in snapshot_x), snapshot_y.numpy()
-
-        if params.optim == Optim.SGD:
-            optimizer = optim.SGD(
-                momentum=params.momentum
-                , lr=params.learning_rate
-                , params=self.net.parameters()
-                , weight_decay=params.weight_decay
-            )
-        elif params.optim == Optim.ADAM:
-            optimizer = optim.Adam(
-                lr=params.learning_rate
-                , params=self.net.parameters()
-                , weight_decay=params.weight_decay
-            )
-        elif params.optim == Optim.ADAM_AMSGRAD:
-            optimizer = optim.Adam(
-                amsgrad=True
-                , lr=params.learning_rate
-                , params=self.net.parameters()
-                , weight_decay=params.weight_decay
-            )
-        elif params.optim == Optim.SGD_NESTEROV:
-            optimizer = optim.SGD(
-                nesterov=True
-                , lr=params.learning_rate
-                , momentum=params.momentum
-                , params=self.net.parameters()
-                , weight_decay=params.weight_decay
-            )
+            
+        optimizer = params.optim(net=self.net, params=params.optim_params)
 
         scheduler = lr_scheduler.ReduceLROnPlateau(
             optimizer
             , mode='min'
-            , factor=params.scheduler_factor
-            , patience=params.scheduler_patience
-            , threshold=params.scheduler_threshold
+            , factor=params.scheduler_params.factor
+            , patience=params.scheduler_params.patience
+            , threshold=params.scheduler_params.threshold
         )
         
         idx_iter: int                           = 0
@@ -236,13 +299,6 @@ class NNModel():
 
                     idx_iter += 1
                     tqdm_bar.update(1)
-                    # tqdm_bar.set_postfix_str(
-                    #     "train_error: {train_error} - val_error: ? - lr: {lr}"
-                    #         .format(
-                    #             train_error=f"{train_edp.error:.4f}"
-                    #             , lr=str(optimizer.param_groups[0]['lr'])
-                    #         )
-                    # )
 
                 val_edp = self.evaluate(loader=params.val_loader) if validate else None
                         
@@ -263,14 +319,13 @@ class NNModel():
                         .with_val_snapshot(val_snapshot)
                 )
                 
-                scheduler.step(val_edp.error)
+                scheduler.step(val_edp.error if val_edp is not None else train_edp)
                 
                 tqdm_bar.set_postfix_str(
-                    "train_error: {train_error} - val_error: {val_error} - lr: {lr}"
+                    "error={error}, lr={lr}"
                         .format(
-                            train_error=f"{train_edp.error:.4f}"
-                            , val_error=f"{val_edp.error:.4f}" if val_edp is not None else "-"
-                            , lr=str(optimizer.param_groups[0]['lr'])
+                            error=f"{val_edp.error if val_edp is not None else train_edp.error:.4f}"
+                            , lr=f"{optimizer.param_groups[0]['lr']:.4f}"
                         )
                 )
         
