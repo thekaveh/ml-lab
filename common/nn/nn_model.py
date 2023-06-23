@@ -3,13 +3,15 @@ import numpy as np
 
 from torch import nn
 from tqdm import tqdm
-from typing import List
+from dataclasses import asdict
+from typing import List, Optional
 from torch.optim import lr_scheduler
 from torch.utils.data import DataLoader
 
 from .enum.loss import Loss
 from .enum.device import Device
 
+from .params.nn_checkpoint import NNCheckpoint
 from .params.nn_train_params import NNTrainParams
 from .params.nn_model_params import NNModelParams
 from .params.nn_iteration_data_point import NNIterationDataPoint
@@ -37,11 +39,12 @@ class NNModel():
         assert params is not None
         
         train_str   = f"{self.params} x {self.net} x {params}"
+        run         = { **asdict(self.params), **asdict(self.net.params), **asdict(params) }
         validate    = params.val_loader is not None
             
-        optimizer = params.optim(net=self.net, params=params.optim_params)
+        optimizer   = params.optim(net=self.net, params=params.optim_params)
 
-        scheduler = lr_scheduler.ReduceLROnPlateau(
+        scheduler   = lr_scheduler.ReduceLROnPlateau(
             optimizer
             , mode='min'
             , factor=params.scheduler_params.factor
@@ -49,16 +52,22 @@ class NNModel():
             , threshold=params.scheduler_params.threshold
         )
         
-        idx_iter: int                           = 0
-        idps    : List[NNIterationDataPoint]    = []
-        n_iter  : int                           = int(params.n_epochs * len(params.train_loader))
+        idx_iter        : int                           = 0
+        idps            : List[NNIterationDataPoint]    = []
+        n_iter          : int                           = int(params.n_epochs * len(params.train_loader))
+        best_checkpoint : Optional[NNCheckpoint]        = NNCheckpoint.from_best_checkpoint()
+        
+        print(train_str)
+        print(run)
 
-        tqdm_bar = tqdm(
-            desc=train_str
-            , total=n_iter
-        )
-
-        with torch.set_grad_enabled(True):
+        with (
+            torch.set_grad_enabled(True)
+            , tqdm(
+                colour="blue"
+                , total=n_iter
+                , desc="Training"
+            ) as tqdm_bar
+        ):
             for idx_epoch in range(params.n_epochs):
                 for idx_batch, batch in enumerate(params.train_loader):
                     self.net.train()
@@ -89,12 +98,28 @@ class NNModel():
                     idx_iter += 1
                     tqdm_bar.update(1)
 
-                val_edp = self.evaluate(loader=params.val_loader) if validate else None
-                    
-                idps[-1] = (
-                    idps[-1]
-                        .with_val_edp(val_edp)
+                val_edp     = self.evaluate(loader=params.val_loader) if validate else None           
+                idps[-1]    = idps[-1].with_val_edp(val_edp)           
+                checkpoint  = NNCheckpoint(
+                    idp=idps[-1]
+                    , model_state=self.net.state_dict()
+                    , optim_state=optimizer.state_dict()
                 )
+                
+                if idx_epoch == 0:
+                    checkpoint.to_first_checkpoint()       
+                elif idx_epoch == int(params.n_epochs / 4) - 1:
+                    checkpoint.to_1st_quartile_checkpoint()       
+                elif idx_epoch == int(params.n_epochs / 2) - 1:
+                    checkpoint.to_2nd_quartile_checkpoint()   
+                elif idx_epoch == int(3 * params.n_epochs / 4) - 1:
+                    checkpoint.to_3rd_quartile_checkpoint()
+                    
+                checkpoint.to_last_checkpoint()
+                
+                if best_checkpoint is None or checkpoint.idp.val_edp.error < best_checkpoint.idp.val_edp.error:
+                    best_checkpoint = checkpoint
+                    checkpoint.to_best_checkpoint()
                 
                 scheduler.step(val_edp.error if val_edp is not None else train_edp)
                 

@@ -44,3 +44,20 @@ class FeedFwdNN(nn.Module):
     
     def __str__(self):
         return f"FeedFwdNN={self.params}"
+    
+    def to_file(self, path: str) -> None:
+        torch.save(self.state_dict(), path)
+        
+    @staticmethod
+    def from_file(path: str, params: NNParams) -> 'FeedFwdNN':
+        net = FeedFwdNN(params)
+        net.load_state_dict(torch.load(path))
+        
+        return net
+    
+    @staticmethod
+    def from_state(state_dict: dict, params: NNParams) -> 'FeedFwdNN':
+        net = FeedFwdNN(params)
+        net.load_state_dict(state_dict)
+        
+        return net

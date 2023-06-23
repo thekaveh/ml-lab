@@ -1,3 +1,4 @@
+rich
 gitpython
 dataclasses
 opencv-python
