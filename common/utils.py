@@ -1,13 +1,13 @@
 import torch
 import numpy as np
 import seaborn as sns
-import holoviews as hv
+# import holoviews as hv
 import matplotlib.pyplot as plt
 
-from holoviews import opts
+# from holoviews import opts
 
 sns.set()
-hv.extension('bokeh')
+# hv.extension('bokeh')
 
 class Utils:
     @staticmethod
@@ -37,26 +37,26 @@ class Utils:
         plt.tight_layout()
         plt.show();
     
-    @staticmethod
-    def scatter_plot_hv(vm):
-        scatter_plots = []
+    # @staticmethod
+    # def scatter_plot_hv(vm):
+    #     scatter_plots = []
 
-        for t_idx, _ in enumerate(vm["ts"]["uni_vals"]):
-            scatter = hv.Scatter(
-                data={
-                    vm["xs"]["label"]: vm["xs-ts"][t_idx],
-                    vm["ys"]["label"]: vm["ys-ts"][t_idx],
-                },
-                kdims=[vm["xs"]["label"]],
-                vdims=[vm["ys"]["label"]],
-                label=str(vm["ts"]["labels"][t_idx])
-            ).opts(color=vm["ts"]["colors"][t_idx])
+    #     for t_idx, _ in enumerate(vm["ts"]["uni_vals"]):
+    #         scatter = hv.Scatter(
+    #             data={
+    #                 vm["xs"]["label"]: vm["xs-ts"][t_idx],
+    #                 vm["ys"]["label"]: vm["ys-ts"][t_idx],
+    #             },
+    #             kdims=[vm["xs"]["label"]],
+    #             vdims=[vm["ys"]["label"]],
+    #             label=str(vm["ts"]["labels"][t_idx])
+    #         ).opts(color=vm["ts"]["colors"][t_idx])
             
-            scatter_plots.append(scatter)
+    #         scatter_plots.append(scatter)
 
-        overlay = hv.Overlay(scatter_plots).opts(legend_position='right', width=2000, height=2000)
+    #     overlay = hv.Overlay(scatter_plots).opts(legend_position='right', width=2000, height=2000)
 
-        return overlay
+    #     return overlay
         
     @staticmethod
     def scatter_plot(vm, figsize=(15, 15), title_size=15, label_size=12):

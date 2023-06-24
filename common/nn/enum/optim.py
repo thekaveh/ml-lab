@@ -2,8 +2,7 @@ from __future__ import annotations
 
 from enum import Enum
 from torch import nn, optim
-
-from ..params.nn_optim_params import NNOptimParams
+from typing import Tuple, Union
 
 class Optim(Enum):
     SGD             = "sgd"
@@ -17,37 +16,43 @@ class Optim(Enum):
     def __repr__(self):
         return str(self)
     
-    def __call__(self, net: nn.Module, params: NNOptimParams):
-        assert net is not None and params is not None
+    def __call__(
+        self
+        , net           : nn.Module
+        , lr_start      : float
+        , weight_decay  : float
+        , momentum      : Union[float, Tuple[float, float]]
+    ):
+        assert net is not None
         
         match self:
             case Optim.SGD:
                 return optim.SGD(
-                    lr=params.lr_start
+                    lr=lr_start
+                    , momentum=momentum
                     , params=net.parameters()
-                    , momentum=params.momentum
-                    , weight_decay=params.weight_decay
+                    , weight_decay=weight_decay
                 )
             case Optim.ADAM:
                 return optim.Adam(
-                    lr=params.lr_start
-                    , betas=params.momentum
+                    lr=lr_start
+                    , betas=momentum
                     , params=net.parameters()
-                    , weight_decay=params.weight_decay
+                    , weight_decay=weight_decay
                 )
             case Optim.ADAM_AMSGRAD:
                 return optim.Adam(
                     amsgrad=True
-                    , lr=params.lr_start
-                    , betas=params.momentum
+                    , lr=lr_start
+                    , betas=momentum
                     , params=net.parameters()
-                    , weight_decay=params.weight_decay
+                    , weight_decay=weight_decay
                 )
             case Optim.SGD_NESTEROV:
                 return optim.SGD(
                     nesterov=True
-                    , lr=params.lr_start
+                    , lr=lr_start
+                    , momentum=momentum
                     , params=net.parameters()
-                    , momentum=params.momentum
-                    , weight_decay=params.weight_decay
+                    , weight_decay=weight_decay
                 )

@@ -10,3 +10,10 @@ class NNSchedulerParams:
     
     def __str__(self):
         return f"[patience={self.patience}, factor={self.factor:1.0e}, threshold={self.threshold:1.0e}]"
+    
+    def to_dict(self):
+        return dict(
+            factor    = self.factor
+            , patience    = self.patience
+            , threshold = self.threshold
+        )

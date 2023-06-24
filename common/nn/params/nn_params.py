@@ -29,3 +29,10 @@ class NNParams:
     
     def __str__(self):
         return self.__repr__()
+    
+    def to_dict(self):
+        return dict(
+            dims            = self.dims
+            , dropout_prob  = self.dropout_prob
+            , activation_fn = self.activation_fn
+        )

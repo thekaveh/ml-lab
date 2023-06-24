@@ -18,3 +18,9 @@ class NNModelParams:
             self.device is not None
             and self.loss is not None
         )
+        
+    def to_dict(self):
+        return dict(
+            loss        = self.loss
+            , device    = self.device
+        )

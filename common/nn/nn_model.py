@@ -23,11 +23,7 @@ class NNModel():
         , net   : nn.Module
         , params: NNModelParams = NNModelParams(device=Device.CPU, loss=Loss.CROSS_ENTROPY)
     ):
-        assert (
-            net is not None
-            and params is not None
-            and params.is_valid()
-        )
+        assert net is not None
          
         self.params     = params
         
@@ -36,13 +32,26 @@ class NNModel():
         self.loss_fn    = self.params.loss().to(self.device)
 
     def train(self, params: NNTrainParams):
-        assert params is not None
+        assert (
+            params is not None
+            and params.optim_params is not None
+            and params.optim_params.is_valid()
+        )
         
         train_str   = f"{self.params} x {self.net} x {params}"
-        run         = { **asdict(self.params), **asdict(self.net.params), **asdict(params) }
         validate    = params.val_loader is not None
+        run         = {
+            **self.params.to_dict()
+            , **self.net.params.to_dict()
+            , **params.to_dict()
+        }
             
-        optimizer   = params.optim(net=self.net, params=params.optim_params)
+        optimizer   = params.optim_params.optim(
+            net=self.net
+            , lr_start=params.optim_params.lr_start
+            , momentum=params.optim_params.momentum
+            , weight_decay=params.optim_params.weight_decay
+        )
 
         scheduler   = lr_scheduler.ReduceLROnPlateau(
             optimizer
@@ -57,7 +66,7 @@ class NNModel():
         n_iter          : int                           = int(params.n_epochs * len(params.train_loader))
         best_checkpoint : Optional[NNCheckpoint]        = NNCheckpoint.from_best_checkpoint()
         
-        print(train_str)
+        # print(train_str)
         print(run)
 
         with (
