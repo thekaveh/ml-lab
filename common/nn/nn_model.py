@@ -12,6 +12,7 @@ from .enum.loss import Loss
 from .enum.device import Device
 from .enum.checkpoint_type import CheckpointType
 
+from .params.nn_run import NNRun
 from .params.nn_checkpoint import NNCheckpoint
 from .params.nn_train_params import NNTrainParams
 from .params.nn_model_params import NNModelParams
@@ -32,20 +33,20 @@ class NNModel():
         self.net        = net.to(self.device)
         self.loss_fn    = self.params.loss().to(self.device)
 
-    def train(self, params: NNTrainParams):
+    def train(self, params: NNTrainParams) -> NNRun:
         assert (
             params is not None
             and params.optim_params is not None
             and params.optim_params.is_valid()
         )
         
-        train_str   = f"{self.params} x {self.net} x {params}"
-        validate    = params.val_loader is not None
-        run         = {
-            **self.params.to_dict()
-            , **self.net.params.to_dict()
-            , **params.to_dict()
-        }
+        train_str   : str   = f"{self.params} x {self.net} x {params}"
+        validate    : bool  = params.val_loader is not None
+        run         : NNRun = NNRun(
+            train_params=params
+            , model_params=self.params
+            , net_params=self.net.params
+        )
             
         optimizer   = params.optim_params.optim(
             net=self.net
@@ -88,7 +89,7 @@ class NNModel():
                     train_loss = self.loss_fn(Y_hat_log, Y)
                     
                     train_edp = (
-                        NNEvaluationDataPoint.of(Y=Y.numpy(), Y_hat=Y_hat.numpy())
+                        NNEvaluationDataPoint.of(Y=Y.cpu().numpy(), Y_hat=Y_hat.cpu().numpy())
                             .with_loss(value=float(train_loss))
                             .with_error(value=float(1 - (Y_hat == Y).sum().item() / Y.size(0)))
                     )
@@ -141,7 +142,7 @@ class NNModel():
                         )
                 )
         
-        return train_str, np.array(idps)
+        return run.with_idps(idps)
 
     def evaluate(self, loader: DataLoader):
         self.net.eval()
@@ -152,7 +153,7 @@ class NNModel():
                 _, Y, Y_hat_log, Y_hat = self.__fwd_pass(batch)
                 
                 edps.append(
-                    NNEvaluationDataPoint.of(Y=Y.numpy(), Y_hat=Y_hat.numpy())
+                    NNEvaluationDataPoint.of(Y=Y.cpu().numpy(), Y_hat=Y_hat.cpu().numpy())
                         .with_loss(value=float(self.loss_fn(Y_hat_log, Y)))
                         .with_error(value=float(1 - (Y_hat == Y).sum().item() / Y.size(0)))
                 )
