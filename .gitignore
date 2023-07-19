@@ -153,3 +153,5 @@ cython_debug/
 
 **/data/
 **/repos/
+**/runs/
+**/checkpoints/
