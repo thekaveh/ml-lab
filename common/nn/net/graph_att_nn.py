@@ -40,7 +40,7 @@ class GraphAttNN(nn.Module):
     def forward(self, X: torch.Tensor, E: torch.Tensor) -> torch.Tensor:
         for layer in self.layers[:-1]:
             X = layer(X, E)
-            X = self.params.activations()(X)
+            X = self.params.activation()(X)
             X = F.dropout(X, p=self.params.dropout_prob, training=self.training)
                 
         X = self.layers[-1](X, E)

@@ -26,7 +26,7 @@ class FeedFwdNN(nn.Module):
         
         for layer in self.layers[:-1]:
             X = layer(X)
-            X = self.params.activations()(X)
+            X = self.params.activation()(X)
             X = F.dropout(X, p=self.params.dropout_prob, training=self.training)
                 
         X = self.layers[-1](X)

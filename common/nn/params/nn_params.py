@@ -29,7 +29,7 @@ class NNParams:
         object.__setattr__(self, '_dims', dims)
     
     def __repr__(self):
-        return f"{{dims={self.dims}, activation={self.activations}, dropout={self.dropout_prob:0.2f}}}"
+        return f"{{dims={self.dims}, activation={self.activation}, dropout={self.dropout_prob:0.2f}}}"
     
     def __str__(self):
         return self.__repr__()
