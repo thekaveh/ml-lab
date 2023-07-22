@@ -7,14 +7,18 @@ from typing import Optional
 from dataclasses import dataclass
 from collections import OrderedDict
 
-from ..enum.checkpoint_type import CheckpointType
+from ..enum.checkpoints import Checkpoints
+
+from ..params.nn_params import NNParams
+from ..params.nn_model_params import NNModelParams
 from ..params.nn_iteration_data_point import NNIterationDataPoint
     
 @dataclass(frozen=True, kw_only=True, slots=True)
 class NNCheckpoint:
+    net_params  : NNParams
+    net_state   : OrderedDict
+    model_params: NNModelParams
     idp         : NNIterationDataPoint
-    model_state : OrderedDict
-    optim_state : OrderedDict
     
     def to_file(self, path: str) -> None:
         dir_path = os.path.dirname(path)
@@ -24,7 +28,7 @@ class NNCheckpoint:
         
         torch.save(self, path)
         
-    def save(self, run: str, type: CheckpointType) -> None:
+    def save(self, run: str, type: Checkpoints) -> None:
         self.to_file(
             path=os.path.join(".", "runs", run, "checkpoints", str(type) + ".pt")
         )
@@ -42,7 +46,7 @@ class NNCheckpoint:
         return ret
     
     @staticmethod
-    def load(run: str, type: CheckpointType) -> Optional[NNCheckpoint]:
+    def load(run: str, type: Checkpoints) -> Optional[NNCheckpoint]:
         return NNCheckpoint.from_file(
             path=os.path.join(".", "runs", run, "checkpoints", str(type) + ".pt")
         )

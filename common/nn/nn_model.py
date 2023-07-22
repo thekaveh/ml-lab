@@ -10,12 +10,13 @@ from typing import List, Optional
 from torch.optim import lr_scheduler
 from torch.utils.data import DataLoader
 
-from .enum.loss import Loss
-from .enum.device import Device
-from .enum.checkpoint_type import CheckpointType
+from .enum.losses import Losses
+from .enum.devices import Devices
+from .enum.checkpoints import Checkpoints
 
 from ..utils import Utils
 from .params.nn_run import NNRun
+from .params.nn_params import NNParams
 from .params.nn_checkpoint import NNCheckpoint
 from .params.nn_train_params import NNTrainParams
 from .params.nn_model_params import NNModelParams
@@ -25,16 +26,28 @@ from .params.nn_evaluation_data_point import NNEvaluationDataPoint
 class NNModel():
     def __init__(
         self
-        , net   : nn.Module
-        , params: NNModelParams = NNModelParams(device=Device.CPU, loss=Loss.CROSS_ENTROPY)
+        , net_params: NNParams
+        , params    : NNModelParams
     ):
-        assert net is not None
-         
+        assert net_params is not None
+        
+        self.net_params = net_params
         self.params     = params
         
         self.device     = self.params.device()
-        self.net        = net.to(self.device)
         self.loss_fn    = self.params.loss().to(self.device)
+        self.net        = self.params.net(params=net_params).to(self.device)
+        
+    @staticmethod
+    def from_checkpoint(checkpoint: NNCheckpoint) -> NNModel:
+        model = NNModel(
+            params=checkpoint.model_params
+            , net_params=checkpoint.net_params
+        )
+        
+        model.net.load_state_dict(checkpoint.net_state)
+        
+        return model
 
     def train(self, params: NNTrainParams) -> NNRun:
         assert (
@@ -45,9 +58,9 @@ class NNModel():
 
         validate    : bool  = params.val_loader is not None
         run         : NNRun = NNRun(
-            train_params=params
-            , model_params=self.params
-            , net_params=self.net.params
+            train_params    = params
+            , model_params  = self.params
+            , net_params    = self.net.params
         )
             
         optimizer   = params.optim_params.optim(
@@ -68,7 +81,7 @@ class NNModel():
         idx_iter        : int                           = 0
         idps            : List[NNIterationDataPoint]    = []
         n_iter          : int                           = int(params.n_epochs * len(params.train_loader))
-        best_checkpoint : Optional[NNCheckpoint]        = NNCheckpoint.load(run=run.id, type=CheckpointType.BEST)
+        best_checkpoint : Optional[NNCheckpoint]        = NNCheckpoint.load(run=run.id, type=Checkpoints.BEST)
         
         Utils.print_tree(run.rep)
 
@@ -113,33 +126,34 @@ class NNModel():
                 val_edp     = self.evaluate(loader=params.val_loader) if validate else None           
                 idps[-1]    = idps[-1].with_val_edp(val_edp)           
                 checkpoint  = NNCheckpoint(
-                    idp=idps[-1]
-                    , model_state=self.net.state_dict()
-                    , optim_state=optimizer.state_dict()
+                    idp             = idps[-1]
+                    , model_params= self.params
+                    , net_params  = self.net_params
+                    , net_state   = self.net.state_dict()
                 )
                 
                 if idx_epoch == 0:
-                    checkpoint.save(run=run.id, type=CheckpointType.FIRST)     
-                elif idx_epoch == int(params.n_epochs / 4) - 1:
-                    checkpoint.save(run=run.id, type=CheckpointType.Q1)     
-                elif idx_epoch == int(params.n_epochs / 2) - 1:
-                    checkpoint.save(run=run.id, type=CheckpointType.Q2)  
-                elif idx_epoch == int(3 * params.n_epochs / 4) - 1:
-                    checkpoint.save(run=run.id, type=CheckpointType.Q3)
+                    checkpoint.save(run=run.id, type=Checkpoints.FIRST)     
+                elif idx_epoch == int(params.n_epochs * 1 / 4) - 1:
+                    checkpoint.save(run=run.id, type=Checkpoints.Q1)     
+                elif idx_epoch == int(params.n_epochs * 2 / 4) - 1:
+                    checkpoint.save(run=run.id, type=Checkpoints.Q2)  
+                elif idx_epoch == int(params.n_epochs * 3 / 4) - 1:
+                    checkpoint.save(run=run.id, type=Checkpoints.Q3)
                     
-                checkpoint.save(run=run.id, type=CheckpointType.LAST)
+                checkpoint.save(run=run.id, type=Checkpoints.LAST)
                 
                 if best_checkpoint is None or checkpoint.idp.val_edp.error < best_checkpoint.idp.val_edp.error:
                     best_checkpoint = checkpoint
-                    checkpoint.save(run=run.id, type=CheckpointType.BEST)
+                    checkpoint.save(run=run.id, type=Checkpoints.BEST)
                 
                 scheduler.step(val_edp.error if val_edp is not None else train_edp)
                 
                 tqdm_bar.set_postfix_str(
                     "error={error}, lr={lr}"
                         .format(
-                            error=f"{val_edp.error if val_edp is not None else train_edp.error:.4f}"
-                            , lr=f"{optimizer.param_groups[0]['lr']:.4f}"
+                            lr      = f"{optimizer.param_groups[0]['lr']:.4f}"
+                            , error = f"{val_edp.error if val_edp is not None else train_edp.error:.4f}"
                         )
                 )
       

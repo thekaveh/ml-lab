@@ -2,32 +2,37 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 
-from ..enum.loss import Loss
-from ..enum.device import Device
+from ..enum.nets import Nets
+from ..enum.losses import Losses
+from ..enum.devices import Devices
 
 @dataclass(frozen=True, kw_only=True, slots=True)
 class NNModelParams:
-    loss  : Loss
-    device: Device
+    net   : Nets
+    device: Devices = Devices.CPU
+    loss  : Losses  = Losses.CROSS_ENTROPY
     
     def __str__(self):
-        return f"[device={self.device}, loss={self.loss}]"
+        return f"[net={self.net}, device={self.device}, loss={self.loss}]"
     
     def is_valid(self):
         return (
-            self.device is not None
+            self.net is not None
+            and self.device is not None
             and self.loss is not None
         )
         
     def to_dict(self) -> dict:
         return dict(
-            loss        = str(self.loss)
+            net         = str(self.net)
+            , loss      = str(self.loss)
             , device    = str(self.device)
         )
         
     @staticmethod
     def from_dict(rep: dict) -> NNModelParams:
         return NNModelParams(
-            loss        = Loss(rep['loss'])
-            , device    = Device(rep['device'])
+            net         = Nets(rep['net'])
+            , loss      = Losses(rep['loss'])
+            , device    = Devices(rep['device'])
         )

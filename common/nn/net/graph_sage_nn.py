@@ -4,7 +4,7 @@ import torch.nn.functional as F
 
 from torch import nn
 from ..params.nn_params import NNParams
-from ..enum.activation_fn import ActivationFn
+from ..enum.activations import Activations
 
 class GraphSageNN(nn.Module):
     def __init__(self, params: NNParams):
@@ -24,7 +24,7 @@ class GraphSageNN(nn.Module):
     def forward(self, X: torch.Tensor, E: torch.Tensor) -> torch.Tensor:
         for layer in self.layers[:-1]:
             X = layer(X, E)
-            X = self.params.activation_fn()(X)
+            X = self.params.activations()(X)
             X = F.dropout(X, p=self.params.dropout_prob, training=self.training)
                 
         X = self.layers[-1](X, E)

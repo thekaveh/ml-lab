@@ -5,11 +5,11 @@ import ast
 from typing import Tuple, Union
 from dataclasses import dataclass
 
-from ..enum.optim import Optim
+from ..enum.optims import Optims
 
 @dataclass(frozen=True, kw_only=True, slots=True)
 class NNOptimParams:
-    optim       : Optim
+    optim       : Optims
     lr_start    : float
     weight_decay: float
     momentum    : Union[float, Tuple[float, float]]
@@ -29,15 +29,15 @@ class NNOptimParams:
     def from_dict(rep: dict) -> NNOptimParams:
         return NNOptimParams(
             lr_start        = rep['lr_start']
-            , optim         = Optim(rep['optim'])
+            , optim         = Optims(rep['optim'])
             , weight_decay  = rep['weight_decay']
             , momentum      = ast.literal_eval(rep['momentum'])
         )
     
     def is_valid(self):
-        if self.optim == Optim.SGD or self.optim == Optim.SGD_NESTEROV:
+        if self.optim == Optims.SGD or self.optim == Optims.SGD_NESTEROV:
             return isinstance(self.momentum, float)
-        elif self.optim == Optim.ADAM or self.optim == Optim.ADAM_AMSGRAD:
+        elif self.optim == Optims.ADAM or self.optim == Optims.ADAM_AMSGRAD:
             return (
                 isinstance(self.momentum, tuple)
                 and len(self.momentum) == 2

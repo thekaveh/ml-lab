@@ -4,7 +4,7 @@ import torch
 
 from enum import Enum
 
-class Device(Enum):
+class Devices(Enum):
     CPU     = "cpu"
     MPS     = "mps"
     CUDA    = "cuda"
@@ -21,8 +21,8 @@ class Device(Enum):
     @staticmethod
     def get():
         if hasattr(torch.backends, "mps") and torch.backends.mps.is_available():
-            return Device.MPS
+            return Devices.MPS
         elif torch.cuda.is_available():
-            return Device.CUDA
+            return Devices.CUDA
         else:
-            return Device.CPU
+            return Devices.CPU

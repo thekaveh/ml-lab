@@ -10,7 +10,7 @@ import pandas as pd
 from typing import List, Optional
 from dataclasses import asdict, dataclass, field, replace
 
-from ..enum.checkpoint_type import CheckpointType
+from ..enum.checkpoints import Checkpoints
 
 from ..params.nn_params import NNParams
 from ..params.nn_checkpoint import NNCheckpoint
@@ -55,11 +55,11 @@ class NNRun:
     
     def checkpoints(self) -> List[NNCheckpoint]:
         return [
-            NNCheckpoint.load(run=self.id, type=CheckpointType.FIRST)
-            , NNCheckpoint.load(run=self.id, type=CheckpointType.Q1)
-            , NNCheckpoint.load(run=self.id, type=CheckpointType.Q2)
-            , NNCheckpoint.load(run=self.id, type=CheckpointType.Q3)
-            , NNCheckpoint.load(run=self.id, type=CheckpointType.LAST)
+            NNCheckpoint.load(run=self.id, type=Checkpoints.FIRST)
+            , NNCheckpoint.load(run=self.id, type=Checkpoints.Q1)
+            , NNCheckpoint.load(run=self.id, type=Checkpoints.Q2)
+            , NNCheckpoint.load(run=self.id, type=Checkpoints.Q3)
+            , NNCheckpoint.load(run=self.id, type=Checkpoints.LAST)
         ]
         
     def save(self) -> NNRun:
@@ -82,8 +82,8 @@ class NNRun:
         if not os.path.exists(best_run_path):
             os.symlink(src=run_path, dst=best_run_path)
         else:
-            best_err = NNCheckpoint.load(run="best", type=CheckpointType.BEST).idp.val_edp.error
-            curr_err = NNCheckpoint.load(run=self.id, type=CheckpointType.BEST).idp.val_edp.error
+            best_err = NNCheckpoint.load(run="best", type=Checkpoints.BEST).idp.val_edp.error
+            curr_err = NNCheckpoint.load(run=self.id, type=Checkpoints.BEST).idp.val_edp.error
             
             if curr_err < best_err:
                 os.remove(path=best_run_path)

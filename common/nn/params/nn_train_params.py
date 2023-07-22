@@ -4,7 +4,7 @@ from typing import Optional
 from torch.utils.data import DataLoader
 from dataclasses import dataclass, field, replace
 
-from ..enum.optim import Optim
+from ..enum.optims import Optims
 from ..params.nn_optim_params import NNOptimParams
 from ..params.nn_scheduler_params import NNSchedulerParams
     
@@ -12,7 +12,7 @@ from ..params.nn_scheduler_params import NNSchedulerParams
 class NNTrainParams:
     n_epochs        : int
     scheduler_params: NNSchedulerParams     = NNSchedulerParams(patience=5, factor=9e-1, threshold=1e-4)
-    optim_params    : NNOptimParams         = NNOptimParams(optim=Optim.ADAM, lr_start=9e-1, momentum=(0.9, 0.999), weight_decay=5e-4)
+    optim_params    : NNOptimParams         = NNOptimParams(optim=Optims.ADAM, lr_start=9e-1, momentum=(0.9, 0.999), weight_decay=5e-4)
     
     train_loader    : Optional[DataLoader]  = field(repr=False, default=None)
     val_loader      : Optional[DataLoader]  = field(repr=False, default=None)

@@ -4,7 +4,7 @@ from enum import Enum
 from torch import nn, optim
 from typing import Tuple, Union
 
-class Optim(Enum):
+class Optims(Enum):
     SGD             = "sgd"
     ADAM            = "adam"
     ADAM_AMSGRAD    = "adam_amsgrad"
@@ -26,21 +26,21 @@ class Optim(Enum):
         assert net is not None
         
         match self:
-            case Optim.SGD:
+            case Optims.SGD:
                 return optim.SGD(
                     lr=lr_start
                     , momentum=momentum
                     , params=net.parameters()
                     , weight_decay=weight_decay
                 )
-            case Optim.ADAM:
+            case Optims.ADAM:
                 return optim.Adam(
                     lr=lr_start
                     , betas=momentum
                     , params=net.parameters()
                     , weight_decay=weight_decay
                 )
-            case Optim.ADAM_AMSGRAD:
+            case Optims.ADAM_AMSGRAD:
                 return optim.Adam(
                     amsgrad=True
                     , lr=lr_start
@@ -48,7 +48,7 @@ class Optim(Enum):
                     , params=net.parameters()
                     , weight_decay=weight_decay
                 )
-            case Optim.SGD_NESTEROV:
+            case Optims.SGD_NESTEROV:
                 return optim.SGD(
                     nesterov=True
                     , lr=lr_start

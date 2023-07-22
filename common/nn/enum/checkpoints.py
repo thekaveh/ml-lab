@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from enum import Enum
 
-class CheckpointType(Enum):
+class Checkpoints(Enum):
     Q1      = "q1"
     Q2      = "q2"
     Q3      = "q3"
