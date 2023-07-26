@@ -78,7 +78,7 @@ class NNDataset(NNDatasetBase):
             , len(self.train_loader.dataset.classes)
         )
         
-        rep = dict(
+        state = dict(
             name            = self.name
             , input_dim     = self.input_dim
             , output_dim    = self.output_dim
@@ -87,4 +87,4 @@ class NNDataset(NNDatasetBase):
             , test_len      = f"{len(self.test_loader.dataset):,}"
         )
         
-        object.__setattr__(self, '_rep', rep)
+        object.__setattr__(self, '_state', state)

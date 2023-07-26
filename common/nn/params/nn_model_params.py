@@ -22,7 +22,7 @@ class NNModelParams:
             and self.loss is not None
         )
         
-    def to_dict(self) -> dict:
+    def state(self) -> dict:
         return dict(
             net         = str(self.net)
             , loss      = str(self.loss)
@@ -30,9 +30,9 @@ class NNModelParams:
         )
         
     @staticmethod
-    def from_dict(rep: dict) -> NNModelParams:
+    def from_state(state: dict) -> NNModelParams:
         return NNModelParams(
-            net         = Nets(rep['net'])
-            , loss      = Losses(rep['loss'])
-            , device    = Devices(rep['device'])
+            net         = Nets(state['net'])
+            , loss      = Losses(state['loss'])
+            , device    = Devices(state['device'])
         )

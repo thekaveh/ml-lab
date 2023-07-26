@@ -48,7 +48,7 @@ class NNEvaluationDataPoint:
 
         return ret
     
-    def to_dict(self) -> dict:
+    def state(self) -> dict:
         return dict(
             f1          = self.f1
             , recall    = self.recall
@@ -59,12 +59,12 @@ class NNEvaluationDataPoint:
         )
     
     @staticmethod
-    def from_dict(rep: dict) -> NNEvaluationDataPoint:
+    def from_state(state: dict) -> NNEvaluationDataPoint:
         return NNEvaluationDataPoint(
-            f1          = rep['f1']
-            , recall    = rep['recall']
-            , accuracy  = rep['accuracy']
-            , precision = rep['precision']
-            , loss      = rep['loss'] if rep['loss'] is not None else None
-            , error     = rep['error'] if rep['error'] is not None else None
+            f1          = state['f1']
+            , recall    = state['recall']
+            , accuracy  = state['accuracy']
+            , precision = state['precision']
+            , loss      = state['loss'] if state['loss'] is not None else None
+            , error     = state['error'] if state['error'] is not None else None
         )

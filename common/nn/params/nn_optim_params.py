@@ -17,7 +17,7 @@ class NNOptimParams:
     def __str__(self):
         return f"[name={self.name}, max_lr={self.max_lr:1.0e}, weight_decay={self.weight_decay:1.0e}, momentum={self.momentum}]"
     
-    def to_dict(self):
+    def state(self):
         return dict(
             max_lr          = self.max_lr
             , momentum      = str(self.momentum)
@@ -26,7 +26,7 @@ class NNOptimParams:
         )
     
     @staticmethod
-    def from_dict(rep: dict) -> NNOptimParams:
+    def from_state(rep: dict) -> NNOptimParams:
         return NNOptimParams(
             max_lr          = rep['max_lr']
             , name          = Optims(rep['name'])

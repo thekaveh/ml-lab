@@ -3,11 +3,13 @@ import torch_geometric as pyg
 import torch.nn.functional as F
 
 from torch import nn
-from ..params.nn_params import GraphAttNNParams
+from ..params.nn_params import NNParams
 
 class GraphAttNN(nn.Module):
-    def __init__(self, params: GraphAttNNParams):
+    def __init__(self, params: NNParams):
         super(GraphAttNN, self).__init__()
+        
+        assert params.n_heads is not None and params.n_heads > 0
         
         self.params = params
         

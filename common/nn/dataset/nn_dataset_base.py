@@ -26,8 +26,7 @@ class NNDatasetBase(ABC):
     val_loader  : DatasetType   = field(init=False)
     test_loader : DatasetType   = field(init=False)
     
-    _rep        : dict          = field(repr=False, init=False)
+    _state      : dict          = field(repr=False, init=False)
     
-    @property
-    def rep(self) -> dict:
-        return self._rep
+    def state(self) -> dict:
+        return self._state

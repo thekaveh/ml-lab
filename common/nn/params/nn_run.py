@@ -25,30 +25,27 @@ class NNRun:
     model   : NNModelParams 
     
     _id     : Optional[str]                         = field(repr=False, default=None)
-    _rep    : Optional[dict]                        = field(repr=False, default=None)
+    _state  : Optional[dict]                        = field(repr=False, default=None)
     idps    : Optional[List[NNIterationDataPoint]]  = field(repr=False, default=None)
     
     @property
     def id(self) -> str:
         return self._id
     
-    @property
-    def rep(self) -> str:
-        return self._rep
-    
     def __post_init__(self):
-        rep = dict(
-            model   = self.model.to_dict()
-            , net   = self.net.to_dict()
-            , train = self.train.to_dict()
+        state = dict(
+            model   = self.model.state()
+            , net   = self.net.state()
+            , train = self.train.state()
         )
         
-        id = hashlib.md5(
-            str(rep).encode('utf-8')
-        ).hexdigest()
+        id = hashlib.md5(str(state).encode('utf-8')).hexdigest()
         
         object.__setattr__(self, '_id', id)
-        object.__setattr__(self, '_rep', {"id": id, **rep})
+        object.__setattr__(self, '_state', {"id": id, **state})
+    
+    def state(self) -> dict:
+        return self._state
     
     def with_idps(self, value: List[NNIterationDataPoint]) -> NNRun:
         return replace(self, idps=value)
@@ -73,10 +70,10 @@ class NNRun:
             os.makedirs(run_path)
         
         with open(yaml_path, 'w') as f:
-            yaml.dump(self.rep, f)
+            yaml.dump(self.state(), f)
         
         pd.json_normalize(
-            data=[idp.to_dict() for idp in self.idps]
+            data=[idp.state() for idp in self.idps]
         ).to_csv(csv_path)
             
         if not os.path.exists(best_run_path):
@@ -103,8 +100,8 @@ class NNRun:
         idps = pd.read_csv(csv_path).to_dict(orient='records')
         
         return NNRun(
-            net     = NNParams.from_dict(rep['net'])
-            , train = NNTrainParams.from_dict(rep['train'])
-            , model = NNModelParams.from_dict(rep['model'])
-            , idps  = [NNIterationDataPoint.from_dict(idp) for idp in idps]
+            net     = NNParams.from_state(rep['net'])
+            , train = NNTrainParams.from_state(rep['train'])
+            , model = NNModelParams.from_state(rep['model'])
+            , idps  = [NNIterationDataPoint.from_state(idp) for idp in idps]
         )

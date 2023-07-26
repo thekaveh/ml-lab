@@ -26,17 +26,17 @@ class NNTrainParams:
     def __str__(self):
         return f"Train={{n_epochs={self.n_epochs}, Optim={self.optim}, Scheduler={self.scheduler}}}"
             
-    def to_dict(self):
+    def state(self):
         return dict(
             n_epochs    = self.n_epochs
-            , optim     = self.optim.to_dict()
-            , scheduler = self.scheduler.to_dict()
+            , optim     = self.optim.state()
+            , scheduler = self.scheduler.state()
         )
         
     @staticmethod
-    def from_dict(rep: dict) -> NNTrainParams:
+    def from_state(state: dict) -> NNTrainParams:
         return NNTrainParams(
-            n_epochs    = rep['n_epochs']
-            , optim     = NNOptimParams.from_dict(rep['optim'])
-            , scheduler = NNSchedulerParams.from_dict(rep['scheduler'])
+            n_epochs    = state['n_epochs']
+            , optim     = NNOptimParams.from_state(state['optim'])
+            , scheduler = NNSchedulerParams.from_state(state['scheduler'])
         )

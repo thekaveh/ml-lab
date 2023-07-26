@@ -89,7 +89,7 @@ class NNModel():
             header=False
             , title="Run Details..."
             , data=Utils.flatten_dict(
-                data=run.rep
+                data=run.state()
             )
         )
 
@@ -118,10 +118,11 @@ class NNModel():
 
                     idps.append(
                         NNIterationDataPoint(
-                            iter_idx=idx_iter
-                            , epoch_idx=idx_epoch
-                            , batch_idx=idx_batch
-                            , train_edp=train_edp
+                            iter_idx    = idx_iter
+                            , epoch_idx = idx_epoch
+                            , batch_idx = idx_batch
+                            , train_edp = train_edp
+                            , lr        = optimizer.param_groups[0]['lr']
                         )
                     )
 
