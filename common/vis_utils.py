@@ -42,7 +42,8 @@ class VisUtils:
                         , mode='lines'
                         , name=ys_legend[y_idx]
                         , line=dict(
-                            color=cs[ys_idx]
+                            width=2
+                            , color=cs[ys_idx]
                             , dash=ls[y_idx]
                         )
                     )

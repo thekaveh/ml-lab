@@ -105,3 +105,7 @@ class NNRun:
             , model = NNModelParams.from_state(rep['model'])
             , idps  = [NNIterationDataPoint.from_state(idp) for idp in idps]
         )
+        
+    @staticmethod
+    def all() -> List[NNRun]:
+        return [NNRun.load(id=id) for id in os.listdir(os.path.join(os.getcwd(), "runs"))]
