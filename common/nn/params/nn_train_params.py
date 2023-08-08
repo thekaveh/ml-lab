@@ -11,8 +11,8 @@ from ..params.nn_scheduler_params import NNSchedulerParams
 @dataclass(frozen=True, kw_only=True, slots=True)
 class NNTrainParams:
     n_epochs        : int
-    scheduler       : NNSchedulerParams     = NNSchedulerParams(patience=8, cooldown=2, factor=9e-1, threshold=1e-2, min_lr=1e-5)
-    optim           : NNOptimParams         = NNOptimParams(name=Optims.ADAM, max_lr=9e-1, momentum=(0.9, 0.999), weight_decay=5e-4)
+    scheduler       : NNSchedulerParams     = NNSchedulerParams(patience=8, cooldown=2, factor=95e-2, threshold=1e-3, min_lr=1e-7)
+    optim           : NNOptimParams         = NNOptimParams(name=Optims.ADAM, max_lr=1e-2, momentum=(0.9, 0.999), weight_decay=5e-5)
     
     train_loader    : Optional[DataLoader]  = field(repr=False, default=None)
     val_loader      : Optional[DataLoader]  = field(repr=False, default=None)
