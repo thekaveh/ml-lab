@@ -25,7 +25,7 @@ class VisUtils:
     @staticmethod
     def generate_colors(n):
         hues = np.linspace(0, 1, n)
-        rgb_colors = [colorsys.hsv_to_rgb(h, 1, 1) for h in hues]
+        rgb_colors = [colorsys.hsv_to_rgb(h, 0.6, 0.95) for h in hues]
         hex_colors = ['#%02x%02x%02x' % (int(r*255), int(g*255), int(b*255)) for r, g, b in rgb_colors]
         
         return hex_colors
