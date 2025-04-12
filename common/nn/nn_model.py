@@ -211,7 +211,7 @@ class NNModel():
         
         self.net.eval()
         with torch.no_grad():
-            Y_hat_log = self.net(*X).detach().numpy()
+            Y_hat_log = self.net(*X).cpu().numpy()
             Y_hat = Y_hat_log.argmax(axis=1)
             
             return Y_hat_log, Y_hat
