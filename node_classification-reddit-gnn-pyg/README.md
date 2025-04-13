@@ -156,26 +156,210 @@ Based on analysis of a 50,000-node sample:
 ## Experimental Results
 
 ### Phase I: Dataset Exploration
-- Comprehensive analysis of graph properties
-- Visualization of node distributions
-- Community structure analysis
-- Degree distribution studies
-- T-SNE projections of node features
+Detailed exploration of the Reddit2 dataset was performed to understand its characteristics and structure:
+
+1. Data Loading and Preprocessing:
+   - Dataset loaded from PyG's Reddit2
+   - Features normalized using standard scaling
+   - Tensors converted to sparse format for memory efficiency (reduced memory footprint)
+   - Initial analysis of basic graph properties and structure
+
+2. Graph Analysis:
+   - Confirmed graph properties:
+     - No self-loops present in the network
+     - Undirected edges (bidirectional relationships)
+     - Presence of isolated nodes identified
+     - Graph connectivity assessment
+   - Calculated key metrics:
+     - Average degree: 99.65 (high connectivity)
+     - Node feature dimensions: 602 (rich feature space)
+     - Edge count: 23,213,838 (dense interaction network)
+     - Node distribution across communities
+
+3. Sampling Analysis (50,000 nodes):
+   - Computed subgraph statistics:
+     - 557,817 edges in sample
+     - Average degree: 22.31 (representative of full graph)
+     - Graph density: 0.00044626 (confirms sparsity)
+     - 2041 connected components (community structure)
+   - Analyzed node feature distributions
+   - Evaluated class balance and representation
+   - Studied edge patterns and connectivity
+
+4. Visualization Studies:
+   - t-SNE 2D projection of node features:
+     - Revealed natural clustering patterns
+     - Showed clear class separation
+     - Identified overlapping communities
+     - Visualized feature space structure
+   - NetworkX rendering with:
+     - Ground truth class labels (41 communities)
+     - Louvain community detection comparison
+     - Node degree visualization
+     - Community structure analysis
+   - Degree distribution analysis:
+     - Histogram plots showing degree spread
+     - Log-log rank plots for scale-free properties
+     - Power law confirmation (characteristic of social networks)
+     - Hub node identification
 
 ### Phase II: Model Selection
-- Multiple experiments with varying parameters:
-  - Learning rates: [1e-2, 1e-3, 1e-4, 1e-5]
-  - Optimizer algorithms: [adam, sgd]
-  - Weight decay: [0, 5e-4]
-  - Dropout probabilities: [0, 0.25, 0.5]
-  - Hidden layer dimensions: [[128], [1024, 512, 256]]
-  - Training epochs: [100, 250, 500, 1000]
+Systematic evaluation of models through multiple experiments, each designed to test specific aspects:
 
-### Phase III: Final Model Training
-- Extended training of top performers
-- Detailed metric collection
-- Visualization of model progression
-- Comprehensive evaluation on test set
+1. Experiment 1: Initial Model Comparison
+   - Configuration:
+     - Hidden layer dimension: [128] (memory-conscious)
+     - 16 model combinations tested:
+       * 4 model types × 2 optimizers × 2 learning rates
+       * Various dropout and weight decay settings
+     - 100 epochs per model for baseline performance
+   - Results:
+     - GATNNs consistently outperformed others:
+       * Lower validation error
+       * Better convergence characteristics
+       * More stable training dynamics
+     - Best GATNN achieved continuous improvement
+     - Training time: 57 minutes (32 secs/iteration)
+   - Key Observations:
+     - GATNN resource limitations discovered:
+       * Memory constraints with larger layers
+       * GPU memory bottlenecks
+     - Higher dimensions caused kernel crashes
+     - Attention mechanism effectiveness validated
+
+2. Experiment 2: Extended Training
+   - Configuration:
+     - Winner model from Experiment 1 (GATNN)
+     - 500 epochs for deeper convergence study
+     - All four network types compared:
+       * Consistent hyperparameters
+       * Equal training conditions
+       * Controlled resource allocation
+   - Results:
+     - GraphAttNN validation error: 0.2521
+       * Consistent improvement trend
+       * Stable learning dynamics
+     - GraphSageNN and GraphConvNN showed similar trends:
+       * Comparable convergence patterns
+       * Different computational requirements
+     - FeedFwdNN showed no improvement:
+       * Plateaued early
+       * Failed to capture graph structure
+   - Performance Analysis:
+     - Compared convergence patterns across models
+     - Evaluated training stability metrics
+     - Measured computational costs:
+       * Memory usage
+       * Processing time
+       * Resource utilization
+
+3. Experiment 3: Deep Architecture Testing
+   - Configuration:
+     - Hidden layers: [1024, 512, 256] (deeper network)
+     - Excluded GATNN due to resource constraints
+     - 250 epochs for comprehensive evaluation
+     - Focused on scalability and depth impact
+   - Results:
+     - GraphSageNN superior (error: 0.4452):
+       * Better feature extraction
+       * Efficient neighborhood sampling
+       * Stable training dynamics
+     - GraphConvNN moderate (error: 0.6706):
+       * Limited by full neighborhood processing
+       * Higher computational overhead
+     - FeedFwdNN poor (error: 0.8316):
+       * Failed to leverage graph structure
+       * Limited by feature-only learning
+   - Resource Analysis:
+     - FeedFwdNN: 22 secs/iteration (efficient but poor performance)
+     - GraphSageNN: 68 secs/iteration (balanced performance)
+     - GraphConvNN: 74 secs/iteration (highest overhead)
+   - Architecture Impact Assessment:
+     - Deeper networks' effectiveness
+     - Resource scaling with depth
+     - Performance vs. complexity tradeoffs
+
+4. Experiment 4: Extended GATNN Training
+   - Configuration:
+     - Best GATNN model from previous experiments
+     - 1000 epochs for convergence study
+     - Focused on long-term behavior
+   - Results:
+     - Final validation error: 0.2232
+       * Marginal improvement over shorter training
+       * Diminishing returns observed
+     - Training time: 10 hours 25 minutes
+     - Rate: 37 secs/iteration (consistent throughout)
+   - Observations:
+     - Persistent fluctuations in validation metrics
+     - Minimal improvement over shorter training
+     - Resource utilization remained stable
+     - Learning dynamics analysis
+     - Cost-benefit assessment of extended training
+
+### Phase III: Final Model Training and Evaluation
+Comprehensive evaluation of top-performing models with extended training and detailed analysis:
+
+1. GraphAttNN Final Training:
+   - Extended training for 1200 epochs:
+     * Longer training to ensure convergence
+     * Regular checkpoint saving
+     * Continuous performance monitoring
+   - Metric progression:
+     ```
+     epoch   accuracy   f1      recall   precision
+     pre     0.0568    0.0568  0.0568   0.0568
+     200     0.6322    0.6322  0.6322   0.6322
+     400     0.6740    0.6740  0.6740   0.6740
+     600     0.7350    0.7350  0.7350   0.7350
+     800     0.7655    0.7655  0.7655   0.7655
+     1000    0.7479    0.7479  0.7479   0.7479
+     post    0.7537    0.7537  0.7537   0.7537
+     ```
+   - Detailed Analysis:
+     * Learning rate impact assessment
+     * Attention mechanism effectiveness
+     * Feature importance analysis
+   - Test set performance: 0.7660 across all metrics
+   - Visual analysis through t-SNE projections:
+     * Class separation visualization
+     * Feature space evolution
+     * Attention pattern analysis
+   - Convergence pattern monitoring:
+     * Loss trajectory analysis
+     * Gradient behavior study
+     * Stability assessment
+
+2. GraphSageNN Final Training:
+   - 1000 epochs of training with comprehensive monitoring
+   - Metric progression:
+     ```
+     epoch   accuracy   f1      recall   precision
+     pre     0.0353    0.0353  0.0353   0.0353
+     200     0.4758    0.4758  0.4758   0.4758
+     400     0.7125    0.7125  0.7125   0.7125
+     600     0.7912    0.7912  0.7912   0.7912
+     800     0.8265    0.8265  0.8265   0.8265
+     1000    0.8334    0.8334  0.8334   0.8334
+     post    0.8334    0.8334  0.8334   0.8334
+     ```
+   - Detailed Performance Analysis:
+     * Neighborhood sampling effectiveness
+     * Feature aggregation patterns
+     * Model scaling characteristics
+   - Test set performance: 0.8598 across all metrics
+   - In-depth Evaluation:
+     * Error analysis by class
+     * Feature importance ranking
+     * Model interpretation studies
+   - Clustering visualization analysis:
+     * Community detection accuracy
+     * Node embedding quality
+     * Classification boundary analysis
+   - Convergence stability assessment:
+     * Learning dynamics
+     * Optimization trajectory
+     * Model robustness evaluation
 
 ## Key Findings
 
