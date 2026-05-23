@@ -92,3 +92,38 @@ def test_docs_d8_terminology_consistency_known_canonicals():
     SCRIPT_TEXT = SCRIPT.read_text()
     for token in ("genai-vanilla", "JupyterHub", "NumPy", "PyTorch"):
         assert token in SCRIPT_TEXT, f"D8 missing canonical {token!r}"
+
+
+def test_comments_phase_a_flags_obvious_state_the_what():
+    """Synthetic .py file with a known bad comment should produce a finding."""
+    fake = REPO / "image_classification-mnist-ffnn-numpy" / "_temp_test_comments.py"
+    fake.write_text("# import numpy as np\nimport numpy as np\n")
+    try:
+        r = run_verify("--check", "comments", "--fast")
+        data = json.loads(r.stdout) if r.stdout else {"findings": []}
+        hits = [
+            f for f in data["findings"]
+            if f["check"] == "comments" and "_temp_test_comments.py" in f["location"]
+        ]
+        assert hits, f"expected at least one state-the-what flag; got summary={data.get('summary')}"
+    finally:
+        fake.unlink(missing_ok=True)
+
+
+def test_comments_phase_a_skips_explanatory_comments():
+    """A WHY-style comment should NOT be flagged."""
+    fake = REPO / "image_classification-mnist-ffnn-numpy" / "_temp_why_comments.py"
+    fake.write_text(
+        "# Xavier init keeps variance stable across depths; default torch init blows up here.\n"
+        "weight = xavier_init(shape)\n"
+    )
+    try:
+        r = run_verify("--check", "comments", "--fast")
+        data = json.loads(r.stdout) if r.stdout else {"findings": []}
+        hits = [
+            f for f in data["findings"]
+            if f["check"] == "comments" and "_temp_why_comments.py" in f["location"]
+        ]
+        assert not hits, f"WHY-style comment falsely flagged: {hits}"
+    finally:
+        fake.unlink(missing_ok=True)

@@ -447,8 +447,83 @@ def check_docs(repo: Path, fast: bool) -> CheckResult:
     return result
 
 
+_STATE_THE_WHAT_PATTERNS: tuple[tuple[re.Pattern, re.Pattern], ...] = (
+    (re.compile(r"^\s*#\s*import\s+\S", re.IGNORECASE),
+     re.compile(r"^\s*(?:from\s+\S+\s+)?import\s+\S")),
+    (re.compile(r"^\s*#\s*loop\s+(over|through|across)\b", re.IGNORECASE),
+     re.compile(r"^\s*(?:for|while)\s+")),
+    (re.compile(r"^\s*#\s*return\b", re.IGNORECASE),
+     re.compile(r"^\s*return\b")),
+    (re.compile(r"^\s*#\s*(define|create|define the|declare)\b", re.IGNORECASE),
+     re.compile(r"^\s*def\s+|^\s*class\s+|^\s*\w+\s*=")),
+    (re.compile(r"^\s*#\s*(initialize|init|set|assign)\b", re.IGNORECASE),
+     re.compile(r"^\s*\w+\s*=")),
+    (re.compile(r"^\s*#\s*print\b", re.IGNORECASE),
+     re.compile(r"^\s*print\s*\(")),
+    (re.compile(r"^\s*#\s*(call|invoke|run)\s+\w+", re.IGNORECASE),
+     re.compile(r"^\s*\w+\s*\(")),
+)
+
+
+def _scan_source_for_comments(source: str, location_prefix: str) -> list[Finding]:
+    findings: list[Finding] = []
+    lines = source.splitlines()
+    for i, line in enumerate(lines):
+        stripped = line.lstrip()
+        if not stripped.startswith("#"):
+            continue
+        j = i + 1
+        while j < len(lines):
+            nxt = lines[j].strip()
+            if nxt and not nxt.startswith("#"):
+                break
+            j += 1
+        if j >= len(lines):
+            continue
+        nxt_line = lines[j]
+        for comment_pat, code_pat in _STATE_THE_WHAT_PATTERNS:
+            if comment_pat.match(line) and code_pat.match(nxt_line):
+                findings.append(Finding(
+                    id="C.state_the_what", check="comments", severity="warning",
+                    location=f"{location_prefix}:{i+1}",
+                    message=f"comment restates the next code line: {stripped[:80]!r}",
+                    detail={"next_code": nxt_line.strip()[:80]},
+                ))
+                break
+    return findings
+
+
+def _iter_in_scope_code(repo: Path):
+    for p in (repo / "scripts").glob("*.py"):
+        if p.name in ("verify_repo.py", "edit_notebook_markdown.py"):
+            continue
+        yield p, _read_text(p)
+    for d in ACTIVE_TASK_DIRS:
+        for p in (repo / d).glob("*.py"):
+            yield p, _read_text(p)
+    for nb in _iter_notebooks(repo):
+        try:
+            doc = nbformat.read(nb, as_version=4)
+        except Exception:
+            continue
+        for ci, cell in enumerate(doc.cells):
+            if cell.cell_type != "code":
+                continue
+            marker = nb.with_name(f"{nb.name}#cell[{ci}]")
+            yield marker, cell.source
+
+
 def check_comments(repo: Path, fast: bool) -> CheckResult:
-    return CheckResult(name="comments")
+    result = CheckResult(name="comments")
+    for path_marker, source in _iter_in_scope_code(repo):
+        try:
+            rel = path_marker.relative_to(repo)
+            location_prefix = str(rel)
+        except (ValueError, AttributeError):
+            location_prefix = str(path_marker)
+        for f in _scan_source_for_comments(source, location_prefix):
+            result.findings.append(f)
+    return result
 
 
 def check_execution(repo: Path, fast: bool) -> CheckResult:
