@@ -53,3 +53,28 @@ def test_finding_shape():
     for f in data.get("findings", []):
         assert {"id", "check", "severity", "location", "message"} <= set(f.keys())
         assert f["severity"] in ("error", "warning")
+
+
+def test_structure_s1_notebooks_parse(tmp_path):
+    r = run_verify("--check", "structure", "--fast")
+    data = json.loads(r.stdout) if r.stdout else {"findings": []}
+    s1 = [f for f in data["findings"] if f["id"].startswith("S1")]
+    assert data["summary"]["by_check"]["structure"] == len(s1) + sum(
+        1 for f in data["findings"] if not f["id"].startswith("S1") and f["check"] == "structure"
+    )
+
+
+def test_structure_s5_no_common_imports():
+    """No `from common.` import anywhere in active task notebooks or scripts."""
+    r = run_verify("--check", "structure", "--fast")
+    data = json.loads(r.stdout) if r.stdout else {"findings": []}
+    s5 = [f for f in data["findings"] if f["id"].startswith("S5")]
+    assert s5 == [], f"S5 found stray common.* imports: {s5}"
+
+
+def test_structure_s7_no_pycache_tracked():
+    """No __pycache__, .ipynb_checkpoints, .DS_Store should be tracked."""
+    r = run_verify("--check", "structure", "--fast")
+    data = json.loads(r.stdout) if r.stdout else {"findings": []}
+    s7 = [f for f in data["findings"] if f["id"].startswith("S7")]
+    assert s7 == [], f"S7 found tracked bloat: {s7}"
