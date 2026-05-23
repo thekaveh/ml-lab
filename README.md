@@ -67,7 +67,7 @@ See [docs/env-setup.md](docs/env-setup.md) for the tier mapping.
 
 ## NNx library
 
-The shared toolkit lives as a git submodule at [`./nnx`](./nnx) → `thekaveh/NNx` (private). Clone with submodules:
+The shared toolkit lives as a git submodule at [`./nnx`](./nnx) → [`thekaveh/NNx`](https://github.com/thekaveh/NNx). Clone with submodules:
 
 ```bash
 git clone --recurse-submodules <this repo>
@@ -92,7 +92,7 @@ Future tasks planned (each will become a new top-level folder):
 - [ ] `reinforcement_learning-cartpole-dqn-pytorch`
 - [ ] `diffusion-mnist-ddpm-pytorch`
 
-See [docs/superpowers/specs/2026-05-16-ml-repo-revival-design.md](docs/superpowers/specs/2026-05-16-ml-repo-revival-design.md) §4 for the rationale and the library co-evolution principle.
+The library co-evolution principle (see [CLAUDE.md](CLAUDE.md)): each future task lands its required `nnx` additions upstream first, then bumps the submodule pointer here. YAGNI applies — no speculative abstractions in `nnx`.
 
 ## License
 

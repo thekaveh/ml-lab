@@ -157,3 +157,13 @@ cython_debug/
 **/repos/
 **/runs/
 **/checkpoints/
+
+# Loop / superpowers / local-plan bloat
+.claude/
+.superpowers/
+plan-*.md
+notes-*.md
+docs/superpowers/specs/*-draft.md
+docs/superpowers/specs/*-scratch.md
+.venv/
+/tmp/ml-verify/

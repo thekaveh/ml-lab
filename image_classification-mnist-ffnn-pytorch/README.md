@@ -41,7 +41,7 @@ make run-tier-a
 
 ## Dependencies
 
-This notebook uses `nnx` (the submodule), `torch`, `torchvision`, `plotly`. All installed by the jupyterhub image (Phase 1 merge `cb4d8f4`) or via the root `requirements.txt` + `torch-requirements.txt`.
+This notebook uses `nnx` (the submodule), `torch`, `torchvision`, `plotly`. All installed by the genai-vanilla jupyterhub image or via the root `requirements.txt` + `torch-requirements.txt`.
 
 ## Known issues
 
