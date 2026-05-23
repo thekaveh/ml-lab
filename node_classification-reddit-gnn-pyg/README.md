@@ -39,10 +39,10 @@ Four notebooks sweeping architectures, depths, and learning rates over short tra
 
 Long training runs of the top picks from Phase 2 (Tier-C — preserved outputs, do not re-execute in place; see [../docs/env-setup.md](../docs/env-setup.md)).
 
-- **phase3-main-model-training-and-eval-notebook.ipynb** — Feed-Forward baseline.
-- **phase3-main-model-training-and-eval-notebook2.ipynb** — GraphConv.
-- **phase3-main-model-training-and-eval-notebook3.ipynb** — GraphSAGE (1000 epochs, test acc 0.8598).
-- **phase3-main-model-training-and-eval-notebook4.ipynb** — GraphAttNN (1200 epochs, test acc 0.7660).
+- **phase3-main-model-training-and-eval-notebook.ipynb** — GraphAttention (4 heads, hidden `[128]`, 1200 epochs; test acc 0.7660).
+- **phase3-main-model-training-and-eval-notebook2.ipynb** — GraphSAGE depth-1 (hidden `[1024, 512, 256, 128]`, 1000 epochs).
+- **phase3-main-model-training-and-eval-notebook3.ipynb** — GraphSAGE depth-2 (hidden `[1024, 512, 256, 128, 64]`, 1000 epochs; best overall — val 0.1509, test acc 0.8598).
+- **phase3-main-model-training-and-eval-notebook4.ipynb** — GraphSAGE depth-3 (hidden `[768, 1024, 512, 256, 128, 64]`, 1000 epochs).
 
 ## 4. How to run
 
