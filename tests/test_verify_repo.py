@@ -127,3 +127,23 @@ def test_comments_phase_a_skips_explanatory_comments():
         assert not hits, f"WHY-style comment falsely flagged: {hits}"
     finally:
         fake.unlink(missing_ok=True)
+
+
+def test_execution_fast_mode_skips_e1_e2_e3():
+    """In --fast mode, slow targets (E1-E3) must not be invoked."""
+    r = run_verify("--check", "execution", "--fast")
+    data = json.loads(r.stdout) if r.stdout else {"findings": []}
+    assert "execution" in data["summary"]["checks_run"]
+    forbidden_ids = ("E1.tier_a_failed", "E2.tier_b_smoke_failed", "E3.tier_c_smoke_failed")
+    for f in data.get("findings", []):
+        assert f["id"] not in forbidden_ids, f"slow check ran in --fast mode: {f}"
+
+
+def test_execution_e5_baseline_missing_warns_not_errors():
+    """Before pre-cleanup-baseline tag exists, E5 should warn (not error)."""
+    r = run_verify("--check", "execution", "--fast")
+    data = json.loads(r.stdout) if r.stdout else {"findings": []}
+    e5 = [f for f in data["findings"] if f["id"] == "E5.no_baseline"]
+    if e5:
+        for f in e5:
+            assert f["severity"] == "warning", f"E5.no_baseline must be warning, got {f}"

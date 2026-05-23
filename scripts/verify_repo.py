@@ -526,8 +526,142 @@ def check_comments(repo: Path, fast: bool) -> CheckResult:
     return result
 
 
+def _run(cmd: list[str], cwd: Path) -> tuple[int, str, str]:
+    proc = subprocess.run(cmd, cwd=cwd, capture_output=True, text=True)
+    return proc.returncode, proc.stdout, proc.stderr
+
+
+def _phase3_code_cells_unchanged(repo: Path) -> list[Finding]:
+    findings: list[Finding] = []
+    rc, _, _ = _run(["git", "rev-parse", "--verify", "pre-cleanup-baseline"], repo)
+    if rc != 0:
+        findings.append(Finding(
+            id="E5.no_baseline", check="execution", severity="warning",
+            location="<git>",
+            message="pre-cleanup-baseline tag missing; E5 not enforceable",
+        ))
+        return findings
+    phase3 = list((repo / "node_classification-reddit-gnn-pyg").glob("phase3-*.ipynb"))
+    for nb in phase3:
+        try:
+            head_doc = nbformat.read(nb, as_version=4)
+        except Exception as e:
+            findings.append(Finding(
+                id="E5.head_parse_failed", check="execution", severity="error",
+                location=str(nb.relative_to(repo)),
+                message=f"HEAD notebook unparseable: {e}",
+            ))
+            continue
+        rc, raw, err = _run(
+            ["git", "show", f"pre-cleanup-baseline:{nb.relative_to(repo)}"], repo,
+        )
+        if rc != 0:
+            findings.append(Finding(
+                id="E5.baseline_read_failed", check="execution", severity="error",
+                location=str(nb.relative_to(repo)),
+                message=f"could not read baseline: {err.strip()[:120]}",
+            ))
+            continue
+        try:
+            base_doc = nbformat.reads(raw, as_version=4)
+        except Exception as e:
+            findings.append(Finding(
+                id="E5.baseline_parse_failed", check="execution", severity="error",
+                location=str(nb.relative_to(repo)),
+                message=f"baseline notebook unparseable: {e}",
+            ))
+            continue
+        head_codes = [
+            (c.source, c.get("outputs", []), c.get("execution_count"))
+            for c in head_doc.cells if c.cell_type == "code"
+        ]
+        base_codes = [
+            (c.source, c.get("outputs", []), c.get("execution_count"))
+            for c in base_doc.cells if c.cell_type == "code"
+        ]
+        if head_codes != base_codes:
+            findings.append(Finding(
+                id="E5.code_cells_changed", check="execution", severity="error",
+                location=str(nb.relative_to(repo)),
+                message="Tier-C code cells diverged from baseline",
+                detail={"head_count": len(head_codes), "base_count": len(base_codes)},
+            ))
+    return findings
+
+
 def check_execution(repo: Path, fast: bool) -> CheckResult:
-    return CheckResult(name="execution")
+    result = CheckResult(name="execution")
+
+    if not fast:
+        rc, _, err = _run(["make", "run-tier-a"], repo)
+        if rc != 0:
+            result.findings.append(Finding(
+                id="E1.tier_a_failed", check="execution", severity="error",
+                location="Makefile:run-tier-a",
+                message=f"failed: {err.strip()[-300:]}",
+            ))
+        rc, _, err = _run(["make", "smoke-tier-b"], repo)
+        if rc != 0:
+            result.findings.append(Finding(
+                id="E2.tier_b_smoke_failed", check="execution", severity="error",
+                location="Makefile:smoke-tier-b",
+                message=f"failed: {err.strip()[-300:]}",
+            ))
+        rc, _, err = _run(["make", "smoke-tier-c"], repo)
+        if rc != 0:
+            result.findings.append(Finding(
+                id="E3.tier_c_smoke_failed", check="execution", severity="error",
+                location="Makefile:smoke-tier-c",
+                message=f"failed: {err.strip()[-300:]}",
+            ))
+
+    tier_a = (
+        "image_classification-mnist-ffnn-numpy/notebook.ipynb",
+        "image_classification-mnist-ffnn-pytorch/notebook.ipynb",
+        "node_classification-reddit-gnn-pyg/phase1-dataset-exploration-notebook.ipynb",
+    )
+    for rel in tier_a:
+        nb = repo / rel
+        if not nb.exists():
+            continue
+        try:
+            doc = nbformat.read(nb, as_version=4)
+        except Exception:
+            continue
+        for ci, cell in enumerate(doc.cells):
+            if cell.cell_type != "code":
+                continue
+            for out in cell.get("outputs", []):
+                if out.get("output_type") == "error":
+                    result.findings.append(Finding(
+                        id="E4.cell_error", check="execution", severity="error",
+                        location=f"{rel}:cell[{ci}]",
+                        message=(
+                            f"errored output: {out.get('ename', '?')}: "
+                            f"{str(out.get('evalue', ''))[:120]}"
+                        ),
+                    ))
+
+    result.findings.extend(_phase3_code_cells_unchanged(repo))
+
+    rc_shellcheck, _, _ = _run(["which", "shellcheck"], repo)
+    if rc_shellcheck != 0:
+        result.findings.append(Finding(
+            id="E6.shellcheck_missing", check="execution", severity="warning",
+            location="<env>",
+            message="shellcheck not on PATH; install with `brew install shellcheck`",
+        ))
+    else:
+        for sh in (repo / "scripts").glob("*.sh"):
+            rc, out, err = _run(["shellcheck", str(sh)], repo)
+            if rc != 0:
+                result.findings.append(Finding(
+                    id="E6.shellcheck", check="execution", severity="error",
+                    location=str(sh.relative_to(repo)),
+                    message=(out + err).strip()[-300:],
+                ))
+
+    return result
 
 
 CHECKS: dict[str, Callable[[Path, bool], CheckResult]] = {
