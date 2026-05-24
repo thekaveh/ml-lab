@@ -23,7 +23,13 @@ Convention: top-level folder named `[task]-[dataset]-[model]-[framework]/`.
 
 1. Survey [`nnx/src/nnx/`](nnx/src/nnx/) for reusable primitives.
 2. Identify gaps. If you need new primitives, **land them in [`thekaveh/NNx`](https://github.com/thekaveh/NNx) first** (branch in `./nnx`, commit, push), then bump the submodule pointer here.
-3. Scaffold the new task folder with a `README.md` (use [`node_classification-reddit-gnn-pyg/README.md`](node_classification-reddit-gnn-pyg/README.md) as template) and notebook(s).
+3. Scaffold the new task folder with a `README.md` (use [`node_classification-reddit-gnn-pyg/README.md`](node_classification-reddit-gnn-pyg/README.md) as template) and notebook(s). At the top of §3 "What's in the notebook(s)", include the nbviewer tip — GitHub's notebook renderer chokes on cells with large embedded matplotlib PNGs:
+
+   ```markdown
+   > **Tip:** GitHub may show "Unable to render code block" on output cells with large matplotlib PNGs. [View this notebook on nbviewer](https://nbviewer.org/github/thekaveh/ml-lab/blob/main/<folder>/<notebook>.ipynb) for full rendering.
+   ```
+
+   For folders with multiple notebooks, link to the folder view at `https://nbviewer.org/github/thekaveh/ml-lab/tree/main/<folder>/` instead.
 4. Add the notebook(s) to `required_sections` in [`scripts/verify_repo_config.yaml`](scripts/verify_repo_config.yaml) — or accept the default 6-section requirement.
 5. If Tier-A, add the notebook path to `tier_a_notebooks` in the same YAML and to `TIER_A` in [`Makefile`](Makefile).
 6. Update the root README's task table.
