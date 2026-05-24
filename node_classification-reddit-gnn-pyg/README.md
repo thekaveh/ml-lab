@@ -20,7 +20,7 @@ The Phase-3 notebooks preserve August-2023 training outputs and serve as the pri
 
 ## 3. What's in the notebook(s)
 
-Nine notebooks across three phases. Each follows the standard 6-section structure (see [../CLAUDE.md](../CLAUDE.md)).
+Nine notebooks across three phases. Each follows the standard 6-section structure (see [../CONTRIBUTING.md](../CONTRIBUTING.md)).
 
 ### 3.1 Phase 1 — dataset exploration
 

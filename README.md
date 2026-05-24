@@ -17,7 +17,8 @@ A shared PyTorch toolkit (`nnx`, included here as a git submodule) provides reus
 ```
 ml/
 ├── README.md                                  (this file)
-├── CLAUDE.md                                  (assistant guidance)
+├── CONTRIBUTING.md                            (workflow + conventions)
+├── CHANGELOG.md                               (release notes)
 ├── Makefile                                   (papermill tier targets)
 ├── docs/                                      (env, jupyterhub, vscode-remote)
 ├── scripts/                                   (start, setup, verify, helpers)
@@ -118,7 +119,7 @@ To extend `nnx` for a new task:
 
 ## 7. Repository conventions
 
-See [CLAUDE.md](CLAUDE.md) for the assistant-facing version of these rules. Key points:
+See [CONTRIBUTING.md](CONTRIBUTING.md) for the full workflow. Key points:
 
 - Each top-level folder is a self-contained task (`[task]-[dataset]-[model]-[framework]`). No `tasks/` subdirectory.
 - Shared library code lives in `nnx/`, not a local `common/`.
@@ -141,7 +142,7 @@ Future tasks planned (each will become a new top-level folder):
 - [ ] `reinforcement_learning-cartpole-dqn-pytorch`
 - [ ] `diffusion-mnist-ddpm-pytorch`
 
-Adding a new task: see the "Workflow for adding a new task" section in [CLAUDE.md](CLAUDE.md).
+Adding a new task: see the "Adding a new task folder" section in [CONTRIBUTING.md](CONTRIBUTING.md).
 
 ## 9. License
 

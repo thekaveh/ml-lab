@@ -199,7 +199,8 @@ def _iter_notebooks(repo: Path) -> Iterator[Path]:
 
 def _iter_in_scope_text_files(repo: Path) -> Iterator[Path]:
     yield repo / "README.md"
-    yield repo / "CLAUDE.md"
+    yield repo / "CONTRIBUTING.md"
+    yield repo / "CHANGELOG.md"
     for p in (repo / "docs").glob("*.md"):
         yield p
     for d in ACTIVE_TASK_DIRS:
@@ -356,7 +357,7 @@ def check_structure(repo: Path, fast: bool) -> CheckResult:
                 location=d,
                 message=(
                     f"forbidden top-level directory exists (tracked or not); "
-                    f"violates CLAUDE.md conventions"
+                    f"violates repo conventions — see CONTRIBUTING.md"
                 ),
             ))
 

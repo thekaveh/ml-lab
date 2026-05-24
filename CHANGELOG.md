@@ -24,7 +24,7 @@ This repo follows [Keep a Changelog](https://keepachangelog.com/). Date format: 
 - `image_classification-mnist-ffnn-numpy/README.md`: "ReLU" clarified to "parametric ReLU with α=0.01" (matches code).
 
 ### Removed
-- `common/` — leftover from the pre-nnx era; violated CLAUDE.md.
+- `common/` — leftover from the pre-nnx era; replaced by the `nnx` submodule.
 - `.DS_Store` at repo root.
 
 ### Changed

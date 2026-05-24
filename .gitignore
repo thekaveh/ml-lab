@@ -165,6 +165,9 @@ docs/superpowers/
 plan-*.md
 notes-*.md
 audit-*.md
+CLAUDE.md
+GEMINI.md
+AGENTS.md
 .venv/
 /tmp/ml-verify/
 
