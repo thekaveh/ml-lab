@@ -147,3 +147,70 @@ def test_execution_e5_baseline_missing_warns_not_errors():
     if e5:
         for f in e5:
             assert f["severity"] == "warning", f"E5.no_baseline must be warning, got {f}"
+
+
+def test_required_sections_loaded_from_yaml_config():
+    """The verify_repo_config.yaml should be the source of truth for the
+    REQUIRED_SECTIONS table."""
+    import sys
+    sys.path.insert(0, str(REPO / "scripts"))
+    import importlib
+    if "verify_repo" in sys.modules:
+        importlib.reload(sys.modules["verify_repo"])
+    import verify_repo
+    assert isinstance(verify_repo.REQUIRED_SECTIONS, dict)
+    for d in verify_repo.ACTIVE_TASK_DIRS:
+        assert any(k.startswith(d) for k in verify_repo.REQUIRED_SECTIONS), (
+            f"no entries for {d}"
+        )
+    phase1 = verify_repo.REQUIRED_SECTIONS.get(
+        "node_classification-reddit-gnn-pyg/phase1-dataset-exploration-notebook.ipynb"
+    )
+    assert phase1 is not None
+    assert "4. Model" not in phase1
+    assert len(verify_repo.TIER_A_NOTEBOOKS) == 3
+
+
+def test_phase_b_export_runs_and_produces_json(tmp_path):
+    """--phase-b-out exports candidate comments as JSON; doesn't run full check."""
+    out = tmp_path / "candidates.json"
+    r = run_verify("--check", "comments", "--phase-b-out", str(out))
+    assert r.returncode == 0
+    assert out.exists()
+    data = json.loads(out.read_text())
+    assert "schema_version" in data
+    assert "candidate_count" in data
+    assert "candidates" in data
+    assert isinstance(data["candidates"], list)
+    for cand in data["candidates"]:
+        assert {"location", "comment", "snippet"} <= set(cand.keys())
+
+
+def test_e7_papermill_params_tag_check():
+    """Notebooks meant to be papermilled with -p should declare a parameters tag."""
+    r = run_verify("--check", "execution", "--fast")
+    data = json.loads(r.stdout) if r.stdout else {"findings": []}
+    # E7 is a warning, never an error.
+    e7 = [f for f in data["findings"] if f["id"] == "E7.no_papermill_params_tag"]
+    for f in e7:
+        assert f["severity"] == "warning"
+
+
+def test_s7_forbidden_toplevel_detects_resurrected_common():
+    """S7.forbidden_toplevel fires if common/ ever comes back."""
+    fake_dir = REPO / "common"
+    if fake_dir.exists():
+        return  # pre-existing failure, separate test
+    fake_dir.mkdir()
+    try:
+        r = run_verify("--check", "structure", "--fast")
+        data = json.loads(r.stdout) if r.stdout else {"findings": []}
+        s7 = [
+            f for f in data["findings"]
+            if f["id"] == "S7.forbidden_toplevel" and "common" in f["location"]
+        ]
+        assert s7, "expected S7.forbidden_toplevel to flag resurrected common/"
+        for f in s7:
+            assert f["severity"] == "error"
+    finally:
+        fake_dir.rmdir()

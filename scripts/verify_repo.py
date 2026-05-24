@@ -10,6 +10,7 @@ See docs/superpowers/specs/2026-05-22-repo-cleanup-and-doc-standardization-desig
 from __future__ import annotations
 
 import argparse
+import hashlib
 import importlib.util
 import json
 import re
@@ -21,17 +22,40 @@ from typing import Callable, Iterator
 
 import nbformat
 
-REPO_ROOT = Path(__file__).resolve().parent.parent
+try:
+    import yaml as _yaml  # PyYAML
+except ImportError:
+    _yaml = None
 
-ACTIVE_TASK_DIRS = (
+REPO_ROOT = Path(__file__).resolve().parent.parent
+CONFIG_PATH = Path(__file__).resolve().parent / "verify_repo_config.yaml"
+
+
+def _load_config() -> dict:
+    if _yaml is None or not CONFIG_PATH.exists():
+        return {}
+    return _yaml.safe_load(CONFIG_PATH.read_text()) or {}
+
+
+_CONFIG = _load_config()
+
+ACTIVE_TASK_DIRS = tuple(_CONFIG.get("active_task_dirs", (
     "image_classification-mnist-ffnn-numpy",
     "image_classification-mnist-ffnn-pytorch",
     "node_classification-reddit-gnn-pyg",
-)
+)))
 
 VERIFY_ONLY_DIRS = ("archive", "nnx", "vendor")
 
-REQUIRED_SECTIONS: dict[str, tuple[str, ...]] = {
+
+def _required_sections_from_config() -> dict[str, tuple[str, ...]]:
+    raw = _CONFIG.get("required_sections")
+    if not raw:
+        return {}
+    return {k: tuple(v) for k, v in raw.items()}
+
+
+_DEFAULT_REQUIRED_SECTIONS: dict[str, tuple[str, ...]] = {
     "image_classification-mnist-ffnn-numpy/notebook.ipynb": (
         "1. Overview", "2. Environment & Setup", "3. Data",
         "4. Model", "5. Training", "6. Evaluation & Results",
@@ -76,6 +100,16 @@ REQUIRED_SECTIONS: dict[str, tuple[str, ...]] = {
         "4. Model", "5. Training", "6. Evaluation & Results",
     ),
 }
+
+REQUIRED_SECTIONS: dict[str, tuple[str, ...]] = (
+    _required_sections_from_config() or _DEFAULT_REQUIRED_SECTIONS
+)
+
+TIER_A_NOTEBOOKS = tuple(_CONFIG.get("tier_a_notebooks", (
+    "image_classification-mnist-ffnn-numpy/notebook.ipynb",
+    "image_classification-mnist-ffnn-pytorch/notebook.ipynb",
+    "node_classification-reddit-gnn-pyg/phase1-dataset-exploration-notebook.ipynb",
+)))
 
 README_REQUIRED_H2 = (
     "1. Task summary", "2. Why this exists", "3. What's in the notebook",
@@ -575,6 +609,77 @@ def check_comments(repo: Path, fast: bool) -> CheckResult:
     return result
 
 
+def export_phase_b_candidates(repo: Path, out_path: Path) -> int:
+    """Phase-B LLM judge input.
+
+    Phase A (the deterministic heuristic above) catches obvious state-the-what
+    comments. Phase B is meant to send the *survivors* — comments that look
+    plausible but might still be redundant — to an LLM judge.
+
+    This function exports the candidates: for each comment line that survived
+    Phase A, the 5 lines before, the comment line, and the 5 lines after.
+    A calling agent (or the /goal loop) reads this JSON, dispatches a subagent
+    per file with the prompt below, and applies the verdict.
+
+    Judge prompt template:
+
+        You are reviewing a Python source snippet to enforce a strict
+        comment-hygiene rule: comments are allowed ONLY if they explain WHY
+        (a non-obvious choice), note a hidden CONSTRAINT or workaround, or
+        cite an external reference. Comments that merely restate WHAT the
+        code does must be removed.
+
+        Source path: <path>
+        Context (5 before, comment, 5 after; comment marked ▶):
+        <snippet>
+
+        Respond with: "KEEP" or "DELETE", a colon, then a 12-word-max
+        justification.
+
+    Returns the candidate count.
+    """
+    candidates = []
+    for path_marker, source in _iter_in_scope_code(repo):
+        try:
+            rel = path_marker.relative_to(repo)
+            location_prefix = str(rel)
+        except (ValueError, AttributeError):
+            location_prefix = str(path_marker)
+        # Phase A scanner reports state-the-what — opposite filter wanted here:
+        # comments that DIDN'T match the heuristic but exist anyway.
+        a_flagged_lines = {
+            int(f.location.rsplit(":", 1)[-1])
+            for f in _scan_source_for_comments(source, location_prefix)
+        }
+        lines = source.splitlines()
+        for i, line in enumerate(lines):
+            stripped = line.lstrip()
+            if not stripped.startswith("#"):
+                continue
+            if (i + 1) in a_flagged_lines:
+                continue  # already flagged by Phase A
+            # 5 lines of context on each side.
+            start = max(0, i - 5)
+            end = min(len(lines), i + 6)
+            snippet = "\n".join(
+                ("▶ " if j == i else "  ") + lines[j]
+                for j in range(start, end)
+            )
+            candidates.append({
+                "location": f"{location_prefix}:{i+1}",
+                "comment": stripped,
+                "snippet": snippet,
+            })
+
+    out_path.parent.mkdir(parents=True, exist_ok=True)
+    out_path.write_text(json.dumps({
+        "schema_version": 1,
+        "candidate_count": len(candidates),
+        "candidates": candidates,
+    }, indent=2))
+    return len(candidates)
+
+
 def _run(cmd: list[str], cwd: Path) -> tuple[int, str, str]:
     proc = subprocess.run(cmd, cwd=cwd, capture_output=True, text=True)
     return proc.returncode, proc.stdout, proc.stderr
@@ -691,12 +796,7 @@ def check_execution(repo: Path, fast: bool) -> CheckResult:
                     message=f"failed: {err.strip()[-300:]}",
                 ))
 
-    tier_a = (
-        "image_classification-mnist-ffnn-numpy/notebook.ipynb",
-        "image_classification-mnist-ffnn-pytorch/notebook.ipynb",
-        "node_classification-reddit-gnn-pyg/phase1-dataset-exploration-notebook.ipynb",
-    )
-    for rel in tier_a:
+    for rel in TIER_A_NOTEBOOKS:
         nb = repo / rel
         if not nb.exists():
             continue
@@ -717,6 +817,63 @@ def check_execution(repo: Path, fast: bool) -> CheckResult:
                             f"{str(out.get('evalue', ''))[:120]}"
                         ),
                     ))
+
+    # V7: every notebook scheduled in REQUIRED_SECTIONS that's also a
+    # papermill target (Tier A/B/C) must have a cell tagged 'parameters'.
+    # Without the tag, `papermill -p NAME val` silently no-ops.
+    for rel in REQUIRED_SECTIONS:
+        nb = repo / rel
+        if not nb.exists():
+            continue
+        try:
+            doc = nbformat.read(nb, as_version=4)
+        except Exception:
+            continue
+        has_params_tag = any(
+            "parameters" in (c.get("metadata", {}).get("tags") or [])
+            for c in doc.cells
+        )
+        if not has_params_tag:
+            # Tag missing → papermill parameterization won't work for this
+            # notebook. Warning rather than error because some notebooks
+            # legitimately don't accept parameters.
+            result.findings.append(Finding(
+                id="E7.no_papermill_params_tag", check="execution", severity="warning",
+                location=rel,
+                message=(
+                    "no cell tagged 'parameters'; papermill -p will silently "
+                    "no-op against this notebook"
+                ),
+            ))
+
+    # V6: Tier-A notebook outputs should match the current source. Cheap check:
+    # for each code cell that has outputs, source byte-hash should match the
+    # hash recorded in the cell's `metadata.source_hash` field if present.
+    # We don't enforce — only flag drift when a freshness marker exists.
+    # (No-op if the marker is absent, which it currently always is. The marker
+    # gets written by a future post-execution hook; this check pre-positions
+    # the verifier for that.)
+    for rel in TIER_A_NOTEBOOKS:
+        nb = repo / rel
+        if not nb.exists():
+            continue
+        try:
+            doc = nbformat.read(nb, as_version=4)
+        except Exception:
+            continue
+        for ci, cell in enumerate(doc.cells):
+            if cell.cell_type != "code":
+                continue
+            recorded = cell.get("metadata", {}).get("source_hash")
+            if recorded is None:
+                continue
+            current = hashlib.sha256(cell.source.encode("utf-8")).hexdigest()
+            if recorded != current:
+                result.findings.append(Finding(
+                    id="E8.stale_output", check="execution", severity="warning",
+                    location=f"{rel}:cell[{ci}]",
+                    message="cell source changed since last execution; re-run to refresh outputs",
+                ))
 
     result.findings.extend(_phase3_code_cells_unchanged(repo))
 
@@ -769,7 +926,20 @@ def main(argv: list[str] | None = None) -> int:
         "--out", type=Path, default=None,
         help="Path to write findings JSON. Default: print to stdout.",
     )
+    parser.add_argument(
+        "--phase-b-out", type=Path, default=None,
+        help=(
+            "Path to write Phase-B comment-hygiene candidates JSON (the input "
+            "to the LLM judge subagent). When set, only this is produced; "
+            "the main check loop is skipped."
+        ),
+    )
     args = parser.parse_args(argv)
+
+    if args.phase_b_out is not None:
+        count = export_phase_b_candidates(REPO_ROOT, args.phase_b_out)
+        print(f"verify_repo: {count} Phase-B candidates → {args.phase_b_out}", file=sys.stderr)
+        return 0
 
     if args.check == "all":
         checks_to_run = list(CHECKS.keys())
