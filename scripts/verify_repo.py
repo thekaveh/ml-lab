@@ -152,7 +152,7 @@ class CheckResult:
 _INTERNAL_LINK_RE = re.compile(r"\[[^\]]+\]\(([^)#][^)#]*)(#[^)]*)?\)")
 _IMPORT_RE = re.compile(r"^\s*(?:from\s+([\w\.]+)\s+import|import\s+([\w\.]+))")
 _GITIGNORE_REQUIRED_PATTERNS = (
-    ".claude/", ".superpowers/", "docs/superpowers/",
+    "docs/superpowers/",
     "plan-*.md", "notes-*.md", "audit-*.md",
     ".mypy_cache/", ".trunk/", ".vscode/",
 )
@@ -334,7 +334,7 @@ def check_structure(repo: Path, fast: bool) -> CheckResult:
                 message=f"required pattern absent: {pat}",
             ))
     for path in tracked:
-        if path.startswith((".claude/", ".superpowers/", "docs/superpowers/")):
+        if path.startswith(("docs/superpowers/",)):
             result.findings.append(Finding(
                 id="S6.tracked_bloat", check="structure", severity="error",
                 location=path,

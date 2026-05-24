@@ -158,16 +158,14 @@ cython_debug/
 **/runs/
 **/checkpoints/
 
-# Loop / superpowers / local-plan / audit bloat — never committed
-.claude/
-.superpowers/
+# Local-only planning / scratch / tool caches — never committed
+.assistant-cache/
+.local-cache/
 docs/superpowers/
 plan-*.md
 notes-*.md
 audit-*.md
-CLAUDE.md
-GEMINI.md
-AGENTS.md
+*INSTRUCTIONS*.md
 .venv/
 /tmp/ml-verify/
 
