@@ -31,6 +31,14 @@ ipywidgets
 kaleido
 prettytable
 
+# Active-notebook deps (numpy MNIST utils.py, GNN phase1 EDA, nnx evaluation metrics)
+numpy
+pandas
+matplotlib
+seaborn
+networkx
+scikit-learn
+
 # NNx — local submodule, editable install
 -e ./nnx
 
