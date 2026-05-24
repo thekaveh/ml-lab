@@ -114,7 +114,7 @@ To extend `nnx` for a new task:
 
 1. Branch in the submodule: `cd nnx && git checkout -b feature-name`.
 2. Add the feature plus a smoke test, commit, push to `thekaveh/NNx`.
-3. From the ml repo: `cd nnx && git pull && cd .. && git add nnx`.
+3. From the ml-lab repo: `cd nnx && git pull && cd .. && git add nnx`.
 4. Commit the submodule pointer bump in ml.
 
 ## 7. Repository conventions

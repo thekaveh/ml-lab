@@ -41,7 +41,7 @@ The `nnx` submodule (thekaveh/NNx) advanced two releases in this cycle:
 
 Iterative /goal-driven verify-and-fix loop converged in 2 rounds. Established the verification oracle, canonical documentation hierarchy, and `pre-cleanup-baseline` recovery tag. 26 doc-conformance errors driven to 0.
 
-## 2026-05-16 — Phase 3 ml repo revival
+## 2026-05-16 — Phase 3 ml-lab repo revival
 
 - `nnx/` extracted as a git submodule pointing at [`thekaveh/NNx`](https://github.com/thekaveh/NNx).
 - Notebooks rewritten to `from nnx.X import Y` (was `from common.X`).

@@ -3,22 +3,24 @@
 # install the nnx submodule as an editable package.
 #
 # Usage (from the host):
-#   docker exec -it <project>-jupyterhub /home/jovyan/work/ml/scripts/setup-in-jupyter.sh
+#   docker exec -it <project>-jupyterhub /home/jovyan/work/ml-lab/scripts/setup-in-jupyter.sh
 #
 # Or (from inside the container terminal, e.g. attached VS Code):
-#   /home/jovyan/work/ml/scripts/setup-in-jupyter.sh
+#   /home/jovyan/work/ml-lab/scripts/setup-in-jupyter.sh
 set -euo pipefail
 
-if [ ! -d /home/jovyan/work/ml/nnx ]; then
-    echo "ERROR: /home/jovyan/work/ml/nnx not found." >&2
+REPO_ROOT="/home/jovyan/work/ml-lab"
+
+if [ ! -d "$REPO_ROOT/nnx" ]; then
+    echo "ERROR: $REPO_ROOT/nnx not found." >&2
     echo "Likely causes:" >&2
-    echo "  - The ml repo isn't mounted (check that ML_REPO_PATH is set in genai-vanilla/.env)" >&2
+    echo "  - The ml-lab repo isn't mounted (check that ML_REPO_PATH is set in genai-vanilla/.env)" >&2
     echo "  - The nnx submodule isn't initialized on the host (run: git submodule update --init)" >&2
     exit 1
 fi
 
 echo "Installing nnx editable..."
-pip install -e /home/jovyan/work/ml/nnx
+pip install -e "$REPO_ROOT/nnx"
 
 echo
 echo "Verifying import..."

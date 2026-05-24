@@ -11,7 +11,7 @@ After the genai-vanilla stack is up:
 2. Find the running `<project>-jupyterhub` container.
 3. Right-click → **Attach Visual Studio Code**.
 
-A new VS Code window opens inside the container. The ml repo is at `/home/jovyan/work/ml`. Open that folder.
+A new VS Code window opens inside the container. The ml-lab repo is at `/home/jovyan/work/ml-lab`. Open that folder.
 
 What works inside:
 - Native VS Code notebook UI with kernel = `python3` (the container's interpreter, with all deps installed).
@@ -25,7 +25,7 @@ This is the best ergonomic match for "edit + commit, no local install".
 Install extension: **Jupyter** (ms-toolsai.jupyter).
 
 After the stack is up:
-1. Open the local `.ipynb` file in VS Code (your host machine's path: `/Users/kaveh/repos/ml/...`).
+1. Open the local `.ipynb` file in VS Code (your host machine's path: e.g. `~/repos/ml-lab/...`).
 2. `Cmd-Shift-P` → **Jupyter: Specify Jupyter Server for Connections** → paste:
    ```
    http://localhost:63081/?token=<JUPYTER_TOKEN>
@@ -34,14 +34,14 @@ After the stack is up:
 3. The kernel now runs in the container; the file is local.
 
 Notes:
-- This works because the ml repo is bind-mounted: the path tree exists on both sides. Relative paths in notebooks (`./data/foo.csv`) resolve correctly because the kernel's CWD is set by VS Code to the notebook's directory inside the container.
+- This works because the ml-lab repo is bind-mounted: the path tree exists on both sides. Relative paths in notebooks (`./data/foo.csv`) resolve correctly because the kernel's CWD is set by VS Code to the notebook's directory inside the container.
 - Useful when you want to keep using your local VS Code window's extensions and context.
 
 ## Mode 3: Browser Jupyter Lab
 
 The simplest path. After the stack is up:
 - Open `http://localhost:63081/?token=<JUPYTER_TOKEN>`
-- Navigate to `work/ml/...`
+- Navigate to `work/ml-lab/...`
 - The `jupyterlab-git` extension (shipped in the image) handles git operations.
 
 Use this for quick edits, demos, or when VS Code is overkill.

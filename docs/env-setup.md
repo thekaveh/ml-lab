@@ -15,13 +15,13 @@ git submodule update --init --recursive
 ### Each session
 
 ```bash
-/Users/kaveh/repos/ml/scripts/start-jupyterhub.sh
+scripts/start-jupyterhub.sh
 ```
 
 The first time a container is created (or after image rebuild), run inside it:
 
 ```bash
-docker exec -it <jupyterhub-container> /home/jovyan/work/ml/scripts/setup-in-jupyter.sh
+docker exec -it <jupyterhub-container> /home/jovyan/work/ml-lab/scripts/setup-in-jupyter.sh
 ```
 
 This installs nnx editable so notebook imports resolve. See [jupyterhub-integration.md](jupyterhub-integration.md) for the details.

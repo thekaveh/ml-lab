@@ -45,7 +45,7 @@ Convention: top-level folder named `[task]-[dataset]-[model]-[framework]/`.
 Primary runtime: the `genai-vanilla` stack vendored as a submodule at `vendor/genai-vanilla` (pinned to genai-vanilla's `main`).
 
 - Start via `scripts/start-jupyterhub.sh` (NOT `cd vendor/genai-vanilla && ./start.sh` — the override needs the wrapper to set env vars and `COMPOSE_FILE`).
-- Inside the running container, run `/home/jovyan/work/ml/scripts/setup-in-jupyter.sh` once to pip install -e the nnx submodule.
+- Inside the running container, run `/home/jovyan/work/ml-lab/scripts/setup-in-jupyter.sh` once to pip install -e the nnx submodule.
 - See [docs/jupyterhub-integration.md](docs/jupyterhub-integration.md) for the full setup.
 
 ## Verification

@@ -1,10 +1,10 @@
 #!/usr/bin/env bash
 # Start genai-vanilla (vendored at vendor/genai-vanilla, pinned to main)
-# with the ml-integration override layered on top.
+# with the ml-lab integration override layered on top.
 #
 # Usage:
-#   ml/scripts/start-jupyterhub.sh           # equivalent to running ./start.sh in the submodule
-#   ml/scripts/start-jupyterhub.sh <args>    # extra args passed through
+#   scripts/start-jupyterhub.sh           # equivalent to running ./start.sh in the submodule
+#   scripts/start-jupyterhub.sh <args>    # extra args passed through
 set -euo pipefail
 
 ML_REPO_ROOT="$(cd "$(dirname "$0")/.." && pwd)"
