@@ -117,8 +117,17 @@ class CheckResult:
 
 _INTERNAL_LINK_RE = re.compile(r"\[[^\]]+\]\(([^)#][^)#]*)(#[^)]*)?\)")
 _IMPORT_RE = re.compile(r"^\s*(?:from\s+([\w\.]+)\s+import|import\s+([\w\.]+))")
-_GITIGNORE_REQUIRED_PATTERNS = (".claude/", ".superpowers/", "plan-*.md", "notes-*.md")
-_BLOAT_PATTERNS = ("__pycache__", ".ipynb_checkpoints", ".DS_Store")
+_GITIGNORE_REQUIRED_PATTERNS = (
+    ".claude/", ".superpowers/", "docs/superpowers/",
+    "plan-*.md", "notes-*.md", "audit-*.md",
+    ".mypy_cache/", ".trunk/", ".vscode/",
+)
+_BLOAT_PATTERNS = (
+    "__pycache__", ".ipynb_checkpoints", ".DS_Store",
+    ".mypy_cache", ".pytest_cache",
+)
+# Top-level dirs that should not exist at all (either tracked or untracked).
+_FORBIDDEN_TOPLEVEL_DIRS = ("common",)
 
 # Modules expected to be available in the genai-vanilla jupyterhub runtime but
 # not necessarily in the verifier's lightweight venv. S2 reports these as
@@ -278,16 +287,19 @@ def check_structure(repo: Path, fast: bool) -> CheckResult:
                             message="forbidden import; use `from nnx.` instead",
                         ))
 
-    gitignore = _read_text(repo / ".gitignore")
+    gitignore_lines = {
+        line.strip() for line in _read_text(repo / ".gitignore").splitlines()
+        if line.strip() and not line.lstrip().startswith("#")
+    }
     for pat in _GITIGNORE_REQUIRED_PATTERNS:
-        if pat not in gitignore:
+        if pat not in gitignore_lines:
             result.findings.append(Finding(
                 id="S6.gitignore_missing", check="structure", severity="error",
                 location=".gitignore",
                 message=f"required pattern absent: {pat}",
             ))
     for path in tracked:
-        if path.startswith((".claude/", ".superpowers/")):
+        if path.startswith((".claude/", ".superpowers/", "docs/superpowers/")):
             result.findings.append(Finding(
                 id="S6.tracked_bloat", check="structure", severity="error",
                 location=path,
@@ -302,6 +314,17 @@ def check_structure(repo: Path, fast: bool) -> CheckResult:
                     location=path,
                     message=f"bloat artifact tracked: contains {pat!r}",
                 ))
+
+    for d in _FORBIDDEN_TOPLEVEL_DIRS:
+        if (repo / d).exists():
+            result.findings.append(Finding(
+                id="S7.forbidden_toplevel", check="structure", severity="error",
+                location=d,
+                message=(
+                    f"forbidden top-level directory exists (tracked or not); "
+                    f"violates CLAUDE.md conventions"
+                ),
+            ))
 
     return result
 
