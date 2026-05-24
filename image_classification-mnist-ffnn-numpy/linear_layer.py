@@ -18,7 +18,7 @@ class LinearLayer:
         self.feature_size_out = feature_size_out
 
         if W is not None:
-            self.W = np.matrix.copy(W)
+            self.W = np.ndarray.copy(W)
         else:
             self.W = np.random.standard_normal(size=(feature_size_out, feature_size_in))
             self.W = self.W / np.linalg.norm(self.W)

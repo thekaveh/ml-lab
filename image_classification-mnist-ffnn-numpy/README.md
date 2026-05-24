@@ -9,7 +9,7 @@
 
 ## 2. Why this exists
 
-A demonstration that the building blocks of a feed-forward classifier (linear layers, ReLU, softmax + cross-entropy loss, mini-batch SGD with backprop) work without any deep-learning framework. Useful for teaching, for personal reference, and as a sanity counterweight to the PyTorch variant in the sibling folder.
+A demonstration that the building blocks of a feed-forward classifier (linear layers, parametric ReLU with α=0.01, softmax + cross-entropy loss, mini-batch SGD with backprop) work without any deep-learning framework. Useful for teaching, for personal reference, and as a sanity counterweight to the PyTorch variant in the sibling folder.
 
 This folder does **not** use the shared `nnx` submodule. It's intentionally standalone.
 

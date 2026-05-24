@@ -30,19 +30,19 @@ Nine notebooks across three phases. Each follows the standard 6-section structur
 
 Four notebooks sweeping architectures, depths, and learning rates over short training budgets to pick a winner per architecture.
 
-- **phase2-model-selection-notebook1.ipynb** — initial 16-combo sweep (4 models × 2 optimizers × 2 learning rates, [128] hidden, 100 epochs).
+- **phase2-model-selection-notebook1.ipynb** — initial 16-combo sweep (4 models × 2 learning rates × 2 dropouts, Adam optimizer, `[128]` hidden, 100 epochs).
 - **phase2-model-selection-notebook2.ipynb** — 500-epoch convergence study of all four models at consistent hyperparameters.
-- **phase2-model-selection-notebook3.ipynb** — deep architecture testing ([1024, 512, 256] hidden, 250 epochs; GAT excluded due to GPU-memory constraints).
-- **phase2-model-selection-notebook4.ipynb** — 1000-epoch GAT extended training.
+- **phase2-model-selection-notebook3.ipynb** — deep architecture testing (`[1024, 512, 256]` hidden, 250 epochs; GAT excluded due to GPU-memory constraints).
+- **phase2-model-selection-notebook4.ipynb** — 1000-epoch GAT extended training (single architecture, not a sweep; see also phase 3).
 
 ### 3.3 Phase 3 — final training and evaluation
 
 Long training runs of the top picks from Phase 2 (Tier-C — preserved outputs, do not re-execute in place; see [../docs/env-setup.md](../docs/env-setup.md)).
 
 - **phase3-main-model-training-and-eval-notebook.ipynb** — GraphAttention (4 heads, hidden `[128]`, 1200 epochs; test acc 0.7660).
-- **phase3-main-model-training-and-eval-notebook2.ipynb** — GraphSAGE depth-1 (hidden `[1024, 512, 256, 128]`, 1000 epochs).
-- **phase3-main-model-training-and-eval-notebook3.ipynb** — GraphSAGE depth-2 (hidden `[1024, 512, 256, 128, 64]`, 1000 epochs; best overall — val 0.1509, test acc 0.8598).
-- **phase3-main-model-training-and-eval-notebook4.ipynb** — GraphSAGE depth-3 (hidden `[768, 1024, 512, 256, 128, 64]`, 1000 epochs).
+- **phase3-main-model-training-and-eval-notebook2.ipynb** — GraphSAGE depth-1 (hidden `[1024, 512, 256, 128]`, 2000 epochs).
+- **phase3-main-model-training-and-eval-notebook3.ipynb** — GraphSAGE depth-2 (hidden `[1024, 512, 256, 128, 64]`, 2000 epochs; best overall — val 0.1509, test acc 0.8598).
+- **phase3-main-model-training-and-eval-notebook4.ipynb** — GraphSAGE depth-3 (hidden `[768, 1024, 512, 256, 128, 64]`, 2000 epochs; comparable to depth-2 — diminishing returns from added depth).
 
 ## 4. How to run
 
