@@ -52,10 +52,70 @@ SPLIT_PATTERNS: list[tuple[re.Pattern[str], callable]] = [
     ),
 ]
 
+# 2026-05-27 — symbol consolidation that the 2026-05-16 migration missed.
+#
+# nnx merged the per-net {FeedFwdNN, GraphAtt, GraphConv, GraphSage}Params
+# dataclasses into a single NNParams with `n_heads: Optional[int]` (a
+# deliberate KISS over per-class typing). The original rewrite_imports
+# handled module paths but not symbol names; this class closes that miss.
+#
+# Two kinds of rewrites:
+#   * IMPORT lines that pull in one of the deprecated symbols — split or
+#     reshape so the deprecated symbol is dropped (and NNParams is imported
+#     if not already imported in the cell).
+#   * CALL-SITE substitution: rename `OldNameParams(` → `NNParams(` in any
+#     code line (including commented-out lines, for consistency).
+#
+DEPRECATED_PARAM_NAMES: list[str] = [
+    "FeedFwdNNParams",
+    "GraphAttNNParams",
+    "GraphConvNNParams",
+    "GraphSageNNParams",
+]
+
+
+def _drop_deprecated_from_import(line: str) -> tuple[str, bool]:
+    """Given a `from ... import A, B[, ...]` line, drop any deprecated
+    Params names from the symbol list. Returns (new_line, changed).
+
+    If all symbols were deprecated, returns ("", True) — caller should
+    omit the line entirely. NNParams import injection is handled at the
+    cell level, not here.
+    """
+    import re as _re
+
+    m = _re.match(r"^(\s*)from\s+([\w.]+)\s+import\s+(.+?)(\s*)$", line.rstrip("\n"))
+    if not m:
+        return line, False
+    indent, module, symbols, trailing = m.group(1), m.group(2), m.group(3), m.group(4)
+    parts = [p.strip() for p in symbols.split(",")]
+    kept = [p for p in parts if p not in DEPRECATED_PARAM_NAMES]
+    if kept == parts:
+        return line, False
+    if not kept:
+        return "", True
+    new_symbols = ", ".join(kept)
+    had_nl = line.endswith("\n")
+    rebuilt = f"{indent}from {module} import {new_symbols}{trailing}"
+    return rebuilt + ("\n" if had_nl else ""), True
+
+
+def _rewrite_call_sites(line: str) -> tuple[str, bool]:
+    """Rewrite `OldNameParams(` → `NNParams(` everywhere on this line."""
+    new_line = line
+    changed = False
+    for old in DEPRECATED_PARAM_NAMES:
+        if old in new_line:
+            new_line = new_line.replace(old, "NNParams")
+            changed = True
+    return new_line, changed
+
 
 def rewrite_lines(source_lines: list[str]) -> list[str]:
     """Apply all rewrites to a list of source lines (each preserving its trailing \\n if present)."""
     out: list[str] = []
+    cell_emits_nnparams_import = False  # tracks whether we already have an NNParams import in this cell after rewrites
+    needs_nnparams = False
     for line in source_lines:
         stripped_nl = line.rstrip("\n")
         had_nl = line.endswith("\n")
@@ -78,7 +138,28 @@ def rewrite_lines(source_lines: list[str]) -> list[str]:
         for old, new in SIMPLE_MAPPINGS:
             if old in new_line:
                 new_line = new_line.replace(old, new)
+        # 2026-05-27: drop deprecated per-net Params from import lines
+        if new_line.lstrip().startswith("from "):
+            rewritten, ch = _drop_deprecated_from_import(new_line)
+            if ch:
+                # Dropping a deprecated symbol means the cell now needs NNParams.
+                needs_nnparams = True
+                # If the whole line vanished (all symbols deprecated), skip emitting it.
+                if rewritten == "":
+                    continue
+                new_line = rewritten
+        # 2026-05-27: rewrite call sites OldNameParams( → NNParams(
+        new_line, call_site_changed = _rewrite_call_sites(new_line)
+        if call_site_changed:
+            needs_nnparams = True
+        # Track whether NNParams is being imported in this cell already.
+        if "from nnx.nn.params.nn_params" in new_line or "import NNParams" in new_line:
+            cell_emits_nnparams_import = True
         out.append(new_line)
+    # If any call site or rewrite needs NNParams but the cell never imports it,
+    # inject one.
+    if needs_nnparams and not cell_emits_nnparams_import:
+        out.insert(0, "from nnx.nn.params.nn_params import NNParams\n")
     return out
 
 
