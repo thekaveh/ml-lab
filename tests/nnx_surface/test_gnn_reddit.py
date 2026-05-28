@@ -7,7 +7,7 @@ Phase C rewrites of this plan) by every other phase2/phase3 notebook.
 and accept an `NNParams` (with `n_heads` only required for the GAT
 branch). This file pins that contract.
 
-The tests don't download Reddit (which is ~1GB). They build a tiny
+The tests don't download Reddit2 (which is ~1.5GB). They build a tiny
 synthetic PyG `Data` via the `tiny_graph_data` fixture and exercise the
 GNN forward pass via a 1-batch `NeighborLoader`.
 
