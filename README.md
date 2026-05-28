@@ -161,11 +161,24 @@ MIT. See [LICENSE](LICENSE).
 
 ## 10. Other documentation
 
-- 10.1 [CONTRIBUTING.md](CONTRIBUTING.md) — workflow + conventions.
-- 10.2 [CHANGELOG.md](CHANGELOG.md) — release notes.
-- 10.3 [docs/env-setup.md](docs/env-setup.md) — environment configuration.
-- 10.4 [docs/jupyterhub-integration.md](docs/jupyterhub-integration.md) — JupyterHub primary runtime.
-- 10.5 [docs/vscode-remote-access.md](docs/vscode-remote-access.md) — VS Code remote attach.
-- 10.6 [docs/FINDINGS-NNX.md](docs/FINDINGS-NNX.md) — NNx submodule issues sink.
-- 10.7 [docs/FINDINGS-VENDOR.md](docs/FINDINGS-VENDOR.md) — vendor submodule issues sink.
-- 10.8 [archive/README.md](archive/README.md) — preserved Aug-2023 experiments index.
+The README is the entry point; the items below are the hub's index of secondary documentation.
+
+### 10.1. Workflow + history
+
+- [CONTRIBUTING.md](CONTRIBUTING.md) — workflow, conventions, "Adding a new task folder" recipe, verifier+pytest gates.
+- [CHANGELOG.md](CHANGELOG.md) — Keep-a-Changelog release notes.
+
+### 10.2. Environment + runtimes
+
+- [docs/env-setup.md](docs/env-setup.md) — environment variables, Python version, Tier mapping.
+- [docs/jupyterhub-integration.md](docs/jupyterhub-integration.md) — primary runtime (vendored `genai-vanilla` JupyterHub stack).
+- [docs/vscode-remote-access.md](docs/vscode-remote-access.md) — VS Code remote-attach modes.
+
+### 10.3. Submodule issue sinks
+
+- [docs/FINDINGS-NNX.md](docs/FINDINGS-NNX.md) — issue log for the `nnx` submodule (append findings here; do not edit nnx directly via this repo).
+- [docs/FINDINGS-VENDOR.md](docs/FINDINGS-VENDOR.md) — same, for `vendor/genai-vanilla`.
+
+### 10.4. Archive
+
+- [archive/README.md](archive/README.md) — preserved Aug-2023 codexglue summarization experiments (23 runs); read-only.
