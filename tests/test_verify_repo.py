@@ -168,7 +168,7 @@ def test_required_sections_loaded_from_yaml_config():
     )
     assert phase1 is not None
     assert "4. Model" not in phase1
-    assert len(verify_repo.TIER_A_NOTEBOOKS) == 3
+    assert len(verify_repo.TIER_A_NOTEBOOKS) == 4
 
 
 def test_phase_b_export_runs_and_produces_json(tmp_path):
