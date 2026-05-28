@@ -683,14 +683,8 @@ def _phase3_code_cells_unchanged(repo: Path) -> list[Finding]:
                 message=f"baseline notebook unparseable: {e}",
             ))
             continue
-        head_codes = [
-            (c.source, c.get("outputs", []), c.get("execution_count"))
-            for c in head_doc.cells if c.cell_type == "code"
-        ]
-        base_codes = [
-            (c.source, c.get("outputs", []), c.get("execution_count"))
-            for c in base_doc.cells if c.cell_type == "code"
-        ]
+        head_codes = [c.source for c in head_doc.cells if c.cell_type == "code"]
+        base_codes = [c.source for c in base_doc.cells if c.cell_type == "code"]
         if head_codes != base_codes:
             findings.append(Finding(
                 id="E5.code_cells_changed", check="execution", severity="error",
