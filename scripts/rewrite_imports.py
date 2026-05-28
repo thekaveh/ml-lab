@@ -82,13 +82,11 @@ def _drop_deprecated_from_import(line: str) -> tuple[str, bool]:
     omit the line entirely. NNParams import injection is handled at the
     cell level, not here.
     """
-    import re as _re
-
-    m = _re.match(r"^(\s*)from\s+([\w.]+)\s+import\s+(.+?)(\s*)$", line.rstrip("\n"))
+    m = re.match(r"^(\s*)from\s+([\w.]+)\s+import\s+(.+?)(\s*)$", line.rstrip("\n"))
     if not m:
         return line, False
     indent, module, symbols, trailing = m.group(1), m.group(2), m.group(3), m.group(4)
-    parts = [p.strip() for p in symbols.split(",")]
+    parts = [p.strip() for p in symbols.split(",") if p.strip()]
     kept = [p for p in parts if p not in DEPRECATED_PARAM_NAMES]
     if kept == parts:
         return line, False
@@ -101,13 +99,20 @@ def _drop_deprecated_from_import(line: str) -> tuple[str, bool]:
 
 
 def _rewrite_call_sites(line: str) -> tuple[str, bool]:
-    """Rewrite `OldNameParams(` → `NNParams(` everywhere on this line."""
+    """Rewrite `OldNameParams(` → `NNParams(` on this line.
+
+    Uses word-boundary regex so identifiers that merely contain a
+    deprecated name as a substring (e.g. `MyGraphAttNNParamsHelper`)
+    are left alone.
+    """
     new_line = line
     changed = False
     for old in DEPRECATED_PARAM_NAMES:
         if old in new_line:
-            new_line = new_line.replace(old, "NNParams")
-            changed = True
+            replaced = re.sub(rf"\b{re.escape(old)}\b", "NNParams", new_line)
+            if replaced != new_line:
+                changed = True
+                new_line = replaced
     return new_line, changed
 
 
@@ -153,7 +158,10 @@ def rewrite_lines(source_lines: list[str]) -> list[str]:
         if call_site_changed:
             needs_nnparams = True
         # Track whether NNParams is being imported in this cell already.
-        if "from nnx.nn.params.nn_params" in new_line or "import NNParams" in new_line:
+        # Match only real `from ... import NNParams[,...]` lines, not
+        # comments / strings that happen to contain the substring.
+        if re.match(r"^\s*from\s+nnx\.nn\.params\.nn_params\s+import\b", new_line) or \
+           re.match(r"^\s*from\s+\S+\s+import\s+.*\bNNParams\b", new_line):
             cell_emits_nnparams_import = True
         out.append(new_line)
     # If any call site or rewrite needs NNParams but the cell never imports it,
