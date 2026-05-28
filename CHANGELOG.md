@@ -6,7 +6,7 @@ This repo follows [Keep a Changelog](https://keepachangelog.com/). Date format: 
 
 ### Added
 - `tabular_classification-iris-mlp-pytorch/` — new Tier-A single-notebook task. First in-repo use of `nnx.NNTabularDataset` (pandas → DataLoader plumbing) on the iris dataset, comparing three FFN topologies (`[]` linear / `[8]` / `[16, 8]`) side-by-side with `VisUtils.multi_line_plot` overlay and per-candidate `VisUtils.confusion_matrix`. Per-task README, notebook with six narrative sections (§1–§6), pytest-nnx-surface module covering the call chain.
-- `tests/nnx_surface/` — pytest NNx-surface layer (`conftest.py` with shared `tiny_tabular_batch` / `tiny_image_batch` / `tiny_graph_data` fixtures + an autouse `_nnx_run_isolation` fixture that pins seeds and chdir's every test to `tmp_path`; `test_mnist_ffnn_pytorch.py`; `test_gnn_reddit.py` with parametrized SAGE/CONV smoke + GAT-with-`n_heads` consolidation regression + `NNParams.state()` round-trip). Sub-30s; gates every PR via the new `pytest-nnx-surface` CI job. GNN forward-pass tests skip cleanly when `pyg-lib` / `torch-sparse` aren't installed (Linux-x86 wheel-only).
+- `tests/nnx_surface/` — pytest NNx-surface layer (`conftest.py` with shared `tiny_tabular_batch` / `tiny_image_batch` / `tiny_graph_data` fixtures + an autouse `_nnx_run_isolation` fixture that pins seeds and chdir's every test to `tmp_path`; `test_mnist_ffnn_pytorch.py`; `test_gnn_reddit.py` with parametrized SAGE/CONV smoke + GAT-with-`n_heads` consolidation regression + `NNParams.state()` round-trip; `test_tabular_classification_iris_mlp_pytorch.py` covering the iris NNTabularDataset → FeedFwdNN → NNModel call chain). Sub-30s; gates every PR via the new `pytest-nnx-surface` CI job. GNN forward-pass tests skip cleanly when `pyg-lib` / `torch-sparse` aren't installed (Linux-x86 wheel-only).
 - `.github/workflows/ci.yml` — new `pytest-nnx-surface` job; Tier-B papermill smoke also fires on PRs labeled `tier-b-smoke`.
 - `scripts/rewrite_imports.py` — symbol-consolidation pass: `{FeedFwdNN, GraphAtt, GraphConv, GraphSage}Params` → `NNParams` at both import and call sites (with word-boundary regex; trailing-comma-safe; auto-injects `from nnx.nn.params.nn_params import NNParams` at cell top when needed). Closes the 2026-05-16 audit miss.
 - `tests/test_rewrite_imports.py` — 6 tests covering the original module-path rewrites + the new symbol consolidation (including a commented-out call-site case).
@@ -30,12 +30,23 @@ This repo follows [Keep a Changelog](https://keepachangelog.com/). Date format: 
 - `image_classification-mnist-ffnn-numpy/funcs.py`: deleted dead `relu` and `relu_prime` (only `parametric_relu*` is used).
 - `node_classification-reddit-gnn-pyg/README.md`: phase-3 epoch counts corrected (1000 → 2000 for notebooks 2/3/4); phase-2 notebook-1 sweep dimensions corrected (1 optimizer × 2 lrs × 2 dropouts, not 2 optimizers).
 - `image_classification-mnist-ffnn-numpy/README.md`: "ReLU" clarified to "parametric ReLU with α=0.01" (matches code).
+- Maintenance batch:
+  - `tabular_classification-iris-mlp-pytorch/notebook.ipynb` — §1/§4/§6 narrative claims corrected to match measured numbers.
+  - `node_classification-reddit-gnn-pyg/phase3-*.ipynb` cell[7] — `net.unpack_batch` → `model.net.unpack_batch`.
+  - `node_classification-reddit-gnn-pyg/phase3-*.ipynb` train cells now honor the papermill `SMOKE_TEST_EPOCHS` parameter (previously hardcoded `n_epochs`).
+  - `image_classification-mnist-ffnn-numpy/notebook.ipynb`, `image_classification-mnist-ffnn-pytorch/notebook.ipynb`, `node_classification-reddit-gnn-pyg/phase1-*.ipynb` — leftover papermill `injected-parameters` cells removed.
 
 ### Removed
 - `common/` — leftover from the pre-nnx era; replaced by the `nnx` submodule.
 - `.DS_Store` at repo root.
 
 ### Changed
+- `scripts/verify_repo.py` — YAML is now required (no silent fallback); `fast` kwarg dropped from `check_structure` / `check_docs` / `check_comments` (was dead); `typing.{Callable,Iterator}` → `collections.abc.{Callable,Iterator}`.
+- `Makefile` `run-tier-a` no longer hardcodes `SMOKE_TEST=1` — it now does the full refresh the help text always promised.
+- `requirements.txt` cleanup: `dataclasses` (stdlib backport) and `openapi` (unused/typo) removed; `torch` pin moved into `torch-requirements.txt`.
+- `Dockerfile` pinned to `quay.io/jupyter/datascience-notebook:python-3.11`; install order swapped to match CI (torch-requirements first); unused NLTK / spaCy downloads dropped.
+- `.github/workflows/ci.yml` — iris notebook added to the Tier-A artifact upload; `cache: pip` extended to the smoke jobs.
+- New `Makefile` targets `make test` and `make verify` wrapping the CI invocations.
 - All per-task READMEs and the root README follow a canonical H2 hierarchy.
 - `.gitignore` broadened: covers `docs/superpowers/`, `.mypy_cache/`, `.trunk/`, `.vscode/`, `.pytest_cache/`, `plan-*.md`, `notes-*.md`, `audit-*.md`.
 - `nnx` submodule pointer bumped from `4ec08aa` to `6ce1122` — 21-commit hop adding `train_step_fn` hook on `NNModel.train`, fine-tuning infra (`freeze`/`unfreeze`/`load_pretrained`/`NNParamGroupSpec`), multi-optimizer `Trainer` (GAN/actor-critic/EBM), diffusion (`NoiseSchedulers`/`DiffusionMLP`/`sample`), training paradigms (`kd`/`simclr`/`mixup`/`cutmix` step factories), PEFT (`LoRALinear`/`apply_lora_to`/`AdapterLayer`), seeding (`nnx.set_seed`/`dataloader_worker_init_fn`/`env_snapshot`), `NNTabularDataset` (pandas DataFrame → loaders), opt-in `TensorBoardCallback`/`WandbCallback`, ONNX export (`NNModel.to_onnx`), and back-compat additions (`PredictResult` NamedTuple, `evaluate(extra_metrics=)`). Earlier in this cycle the pointer also moved through `ae4e2f4` (thekaveh/NNx#1 + #2): see "nnx via submodule" below.
