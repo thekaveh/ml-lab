@@ -15,6 +15,8 @@ The source lesson (CS5644 `MLP-updated.ipynb`) used sklearn's blackbox `MLPClass
 
 ## 3. What's in the notebook
 
+> **Tip:** GitHub may show "Unable to render code block" on output cells with large matplotlib PNGs. [View this notebook on nbviewer](https://nbviewer.org/github/thekaveh/ml-lab/blob/main/tabular_classification-iris-mlp-pytorch/notebook.ipynb) for full rendering.
+
 - §1 Overview — task, dataset, model family, headline-result preview.
 - §2 Environment & Setup — `nnx.set_seed(0)`, version stamps, imports.
 - §3 Data — iris schema, summary stats, class balance, pairplot, MinMax scaling, 70/15/15 train/val/test split, post-cleaning recap.

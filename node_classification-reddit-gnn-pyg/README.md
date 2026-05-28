@@ -32,7 +32,7 @@ Nine notebooks across three phases. Each follows the standard 6-section structur
 
 Four notebooks sweeping architectures, depths, and learning rates over short training budgets to pick a winner per architecture.
 
-- **phase2-model-selection-notebook1.ipynb** — initial 16-combo sweep (4 models × 2 learning rates × 2 dropouts, Adam optimizer, `[128]` hidden, 100 epochs).
+- **phase2-model-selection-notebook1.ipynb** — initial 16-combo sweep (16 combos = 4 architectures × 1 optimizer (Adam) × 2 learning rates × 2 dropouts, `[128]` hidden, 100 epochs).
 - **phase2-model-selection-notebook2.ipynb** — 500-epoch convergence study of all four models at consistent hyperparameters.
 - **phase2-model-selection-notebook3.ipynb** — deep architecture testing (`[1024, 512, 256]` hidden, 250 epochs; GAT excluded due to GPU-memory constraints).
 - **phase2-model-selection-notebook4.ipynb** — 1000-epoch GAT extended training (single architecture, not a sweep; see also phase 3).
@@ -65,7 +65,7 @@ In the recommended runtime ([../docs/jupyterhub-integration.md](../docs/jupyterh
 ## 5. Dependencies
 
 - `torch` (≥ 2.0) + `torch_geometric` + `torch_sparse`
-- `nnx` (the submodule — `Nets.FeedFwd`, `Nets.GraphConv`, `Nets.GraphSage`, `Nets.GraphAtt`)
+- `nnx` (the submodule — `Nets.FEED_FWD`, `Nets.GRAPH_CONV`, `Nets.GRAPH_SAGE`, `Nets.GRAPH_ATT`)
 - `networkx`, `community` (python-louvain), `pandas`, `seaborn`, `matplotlib`, `plotly`
 - `numpy`, `scikit-learn`
 
