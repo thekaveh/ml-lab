@@ -8,7 +8,7 @@ If you want to revive any of these, treat it as starting from scratch with the o
 
 ## codexglue_summarization/
 
-23 sub-experiments around the [CodeXGLUE](https://github.com/microsoft/CodeXGLUE) code-summarization benchmark. Two families:
+22 sub-experiments around the [CodeXGLUE](https://github.com/microsoft/CodeXGLUE) code-summarization benchmark. Two families:
 
 ### Cross-language experiments
 
@@ -56,4 +56,4 @@ Each notebook fine-tunes a pre-trained model (CodeBERT / GraphCodeBERT / RoBERTa
 
 ## Why archived
 
-The codexglue experiments depend on the older `transformers` API and have not been touched since Aug 2023. The active task index in the root README focuses on three smaller, more polished tasks (numpy MNIST, pytorch MNIST, GNN on Reddit). Codexglue stays here as a reference snapshot.
+The codexglue experiments depend on the older `transformers` API and have not been touched since Aug 2023. The active task index in the root README focuses on four smaller, more polished tasks (numpy MNIST, pytorch MNIST, GNN on Reddit, iris MLP). Codexglue stays here as a reference snapshot.

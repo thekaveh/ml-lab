@@ -32,7 +32,7 @@ Nine notebooks across three phases. Each follows the standard 6-section structur
 
 Four notebooks sweeping architectures, depths, and learning rates over short training budgets to pick a winner per architecture.
 
-- **phase2-model-selection-notebook1.ipynb** — initial 16-combo sweep (4 models × 2 learning rates × 2 dropouts, Adam optimizer, `[128]` hidden, 100 epochs).
+- **phase2-model-selection-notebook1.ipynb** — initial 16-combo sweep (16 combos = 4 architectures × 1 optimizer (Adam) × 2 learning rates × 2 dropouts, `[128]` hidden, 100 epochs).
 - **phase2-model-selection-notebook2.ipynb** — 500-epoch convergence study of all four models at consistent hyperparameters.
 - **phase2-model-selection-notebook3.ipynb** — deep architecture testing (`[1024, 512, 256]` hidden, 250 epochs; GAT excluded due to GPU-memory constraints).
 - **phase2-model-selection-notebook4.ipynb** — 1000-epoch GAT extended training (single architecture, not a sweep; see also phase 3).
@@ -65,7 +65,7 @@ In the recommended runtime ([../docs/jupyterhub-integration.md](../docs/jupyterh
 ## 5. Dependencies
 
 - `torch` (≥ 2.0) + `torch_geometric` + `torch_sparse`
-- `nnx` (the submodule — `Nets.FeedFwd`, `Nets.GraphConv`, `Nets.GraphSage`, `Nets.GraphAtt`)
+- `nnx` (the submodule — `Nets.FEED_FWD`, `Nets.GRAPH_CONV`, `Nets.GRAPH_SAGE`, `Nets.GRAPH_ATT`)
 - `networkx`, `community` (python-louvain), `pandas`, `seaborn`, `matplotlib`, `plotly`
 - `numpy`, `scikit-learn`
 
@@ -75,7 +75,7 @@ All available via the genai-vanilla jupyterhub image or via the root `requiremen
 
 - The Reddit2 dataset (~1.5 GB) downloads into `./data/` on first run. Subsequent runs reuse the cached copy.
 - GAT at hidden dim ≥ [256] hit GPU-memory ceilings on the original training hardware (M1 Max, 64GB RAM). The phase2 notebook 3 deliberately excludes GAT for that reason.
-- Phase-3 notebooks are Tier-C; their preserved outputs are part of the artifact and are validated by verify check E5 against the `pre-cleanup-baseline` git tag.
+- Phase-3 notebooks are Tier-C; their preserved Aug-2023 outputs are part of the artifact and must not be re-executed in place. Verify check E5 enforces **code-cell source** equality with the `pre-cleanup-baseline` git tag (markdown and embedded outputs are not compared, so markdown edits via `scripts/edit_notebook_markdown.py` are safe).
 - Memory-conscious sampling: PyG `NeighborLoader` with `[20, 15, 10]` neighborhood sizes per hop is used throughout phase 3.
 
 ## 7. Future work

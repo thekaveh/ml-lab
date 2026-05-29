@@ -11,6 +11,37 @@ on:
     - cron: "0 7 * * 1"
 
 jobs:
+  pytest-nnx-surface:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout (with submodules)
+        uses: actions/checkout@v4
+        with:
+          submodules: recursive
+
+      - name: Set up Python 3.11
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: pip
+          cache-dependency-path: |
+            requirements.txt
+            torch-requirements.txt
+            nnx/pyproject.toml
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r torch-requirements.txt
+          pip install -r requirements.txt
+          pip install pytest
+
+      - name: Verify nnx import
+        run: python -c "import nnx; print(nnx.__file__)"
+
+      - name: Run NNx-surface tests
+        run: pytest tests/nnx_surface -v
+
   tier-a-papermill:
     runs-on: ubuntu-latest
     steps:
@@ -18,7 +49,6 @@ jobs:
         uses: actions/checkout@v4
         with:
           submodules: recursive
-          token: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Set up Python 3.11
         uses: actions/setup-python@v5
@@ -51,22 +81,30 @@ jobs:
             image_classification-mnist-ffnn-numpy/notebook.ipynb
             image_classification-mnist-ffnn-pytorch/notebook.ipynb
             node_classification-reddit-gnn-pyg/phase1-dataset-exploration-notebook.ipynb
+            tabular_classification-iris-mlp-pytorch/notebook.ipynb
           retention-days: 7
 
   smoke-tier-b:
     runs-on: ubuntu-latest
-    if: github.event_name == 'workflow_dispatch' || github.event_name == 'schedule'
+    if: |
+      github.event_name == 'workflow_dispatch'
+      || github.event_name == 'schedule'
+      || contains(github.event.pull_request.labels.*.name, 'tier-b-smoke')
     steps:
       - name: Checkout (with submodules)
         uses: actions/checkout@v4
         with:
           submodules: recursive
-          token: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Set up Python 3.11
         uses: actions/setup-python@v5
         with:
           python-version: "3.11"
+          cache: pip
+          cache-dependency-path: |
+            requirements.txt
+            torch-requirements.txt
+            nnx/pyproject.toml
 
       - name: Install dependencies
         run: |
@@ -85,12 +123,16 @@ jobs:
         uses: actions/checkout@v4
         with:
           submodules: recursive
-          token: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Set up Python 3.11
         uses: actions/setup-python@v5
         with:
           python-version: "3.11"
+          cache: pip
+          cache-dependency-path: |
+            requirements.txt
+            torch-requirements.txt
+            nnx/pyproject.toml
 
       - name: Install dependencies
         run: |

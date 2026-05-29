@@ -20,7 +20,7 @@ This is the canonical reference for "how to build a small classifier using nnx".
 - §1 Overview — task, dataset, approach, libraries.
 - §2 Environment & Setup — `nnx` and torchvision imports, hyperparameters, seed/device setup.
 - §3 Data — construct an `NNDataset` wrapping torchvision's MNIST.
-- §4 Model — `NNModelParams` config (loss, optimizer, scheduler, device); `NNParams` network config; `NNModel` instantiated with `Nets.FeedFwd`. Architecture rationale.
+- §4 Model — `NNModelParams` config (loss, optimizer, scheduler, device); `NNParams` network config; `NNModel` instantiated with `Nets.FEED_FWD`. Architecture rationale.
 - §5 Training — `nnx` training loop tracks per-iteration metrics into `NNIterationDataPoint`.
 - §6 Evaluation & Results — test-set evaluation into `NNEvaluationDataPoint`; convergence + confusion matrix via `nnx.vis_utils`.
 

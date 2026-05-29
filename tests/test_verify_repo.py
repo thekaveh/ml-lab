@@ -6,6 +6,8 @@ import subprocess
 import sys
 from pathlib import Path
 
+import pytest
+
 REPO = Path(__file__).resolve().parent.parent
 SCRIPT = REPO / "scripts" / "verify_repo.py"
 
@@ -26,7 +28,7 @@ def test_help_lists_all_checks():
         assert ch in r.stdout
 
 
-def test_unknown_check_errors(tmp_path):
+def test_unknown_check_errors():
     r = run_verify("--check", "garbage")
     assert r.returncode != 0
 
@@ -94,25 +96,33 @@ def test_docs_d8_terminology_consistency_known_canonicals():
         assert token in SCRIPT_TEXT, f"D8 missing canonical {token!r}"
 
 
-def test_comments_phase_a_flags_obvious_state_the_what():
-    """Synthetic .py file with a known bad comment should produce a finding."""
-    fake = REPO / "image_classification-mnist-ffnn-numpy" / "_temp_test_comments.py"
+def test_comments_phase_a_flags_obvious_state_the_what(tmp_path):
+    """Synthetic .py file with a known bad comment should produce a finding.
+
+    verify_repo.py runs in a subprocess and scans ACTIVE_TASK_DIRS in REPO, so
+    we must drop the synthetic file inside one of those task dirs. We derive a
+    unique filename from `tmp_path` so concurrent test runs don't collide, and
+    wrap in try/finally for robust cleanup even if the assertion fires.
+    """
+    name = f"_temp_{tmp_path.name}_state_the_what.py"
+    fake = REPO / "image_classification-mnist-ffnn-numpy" / name
     fake.write_text("# import numpy as np\nimport numpy as np\n")
     try:
         r = run_verify("--check", "comments", "--fast")
         data = json.loads(r.stdout) if r.stdout else {"findings": []}
         hits = [
             f for f in data["findings"]
-            if f["check"] == "comments" and "_temp_test_comments.py" in f["location"]
+            if f["check"] == "comments" and name in f["location"]
         ]
         assert hits, f"expected at least one state-the-what flag; got summary={data.get('summary')}"
     finally:
         fake.unlink(missing_ok=True)
 
 
-def test_comments_phase_a_skips_explanatory_comments():
+def test_comments_phase_a_skips_explanatory_comments(tmp_path):
     """A WHY-style comment should NOT be flagged."""
-    fake = REPO / "image_classification-mnist-ffnn-numpy" / "_temp_why_comments.py"
+    name = f"_temp_{tmp_path.name}_why.py"
+    fake = REPO / "image_classification-mnist-ffnn-numpy" / name
     fake.write_text(
         "# Xavier init keeps variance stable across depths; default torch init blows up here.\n"
         "weight = xavier_init(shape)\n"
@@ -122,7 +132,7 @@ def test_comments_phase_a_skips_explanatory_comments():
         data = json.loads(r.stdout) if r.stdout else {"findings": []}
         hits = [
             f for f in data["findings"]
-            if f["check"] == "comments" and "_temp_why_comments.py" in f["location"]
+            if f["check"] == "comments" and name in f["location"]
         ]
         assert not hits, f"WHY-style comment falsely flagged: {hits}"
     finally:
@@ -152,23 +162,35 @@ def test_execution_e5_baseline_missing_warns_not_errors():
 def test_required_sections_loaded_from_yaml_config():
     """The verify_repo_config.yaml should be the source of truth for the
     REQUIRED_SECTIONS table."""
-    import sys
-    sys.path.insert(0, str(REPO / "scripts"))
     import importlib
-    if "verify_repo" in sys.modules:
-        importlib.reload(sys.modules["verify_repo"])
-    import verify_repo
-    assert isinstance(verify_repo.REQUIRED_SECTIONS, dict)
-    for d in verify_repo.ACTIVE_TASK_DIRS:
-        assert any(k.startswith(d) for k in verify_repo.REQUIRED_SECTIONS), (
-            f"no entries for {d}"
+
+    scripts_dir = str(REPO / "scripts")
+    sys_path_snapshot = list(sys.path)
+    sys.path.insert(0, scripts_dir)
+    try:
+        if "verify_repo" in sys.modules:
+            importlib.reload(sys.modules["verify_repo"])
+        import verify_repo
+        assert isinstance(verify_repo.REQUIRED_SECTIONS, dict)
+        for d in verify_repo.ACTIVE_TASK_DIRS:
+            assert any(k.startswith(d) for k in verify_repo.REQUIRED_SECTIONS), (
+                f"no entries for {d}"
+            )
+        phase1 = verify_repo.REQUIRED_SECTIONS.get(
+            "node_classification-reddit-gnn-pyg/phase1-dataset-exploration-notebook.ipynb"
         )
-    phase1 = verify_repo.REQUIRED_SECTIONS.get(
-        "node_classification-reddit-gnn-pyg/phase1-dataset-exploration-notebook.ipynb"
-    )
-    assert phase1 is not None
-    assert "4. Model" not in phase1
-    assert len(verify_repo.TIER_A_NOTEBOOKS) == 3
+        assert phase1 is not None
+        assert "4. Model" not in phase1
+
+        # YAML is the source of truth — compare TIER_A_NOTEBOOKS to what the
+        # config file actually declares, not a hardcoded literal.
+        import yaml  # PyYAML is a verify_repo runtime dep, so import is safe here
+        config_path = REPO / "scripts" / "verify_repo_config.yaml"
+        config = yaml.safe_load(config_path.read_text()) or {}
+        expected_tier_a = tuple(config.get("tier_a_notebooks", ()))
+        assert tuple(verify_repo.TIER_A_NOTEBOOKS) == expected_tier_a
+    finally:
+        sys.path[:] = sys_path_snapshot
 
 
 def test_phase_b_export_runs_and_produces_json(tmp_path):
@@ -200,7 +222,7 @@ def test_s7_forbidden_toplevel_detects_resurrected_common():
     """S7.forbidden_toplevel fires if common/ ever comes back."""
     fake_dir = REPO / "common"
     if fake_dir.exists():
-        return  # pre-existing failure, separate test
+        pytest.fail("pre-existing common/ blocks this test")
     fake_dir.mkdir()
     try:
         r = run_verify("--check", "structure", "--fast")

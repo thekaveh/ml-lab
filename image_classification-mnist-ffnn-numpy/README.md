@@ -28,7 +28,7 @@ Supporting modules in this folder:
 
 - `feed_fwd_nn.py` — the network class. Holds an ordered list of layers; forward chains them; backward iterates in reverse with chain-rule gradient propagation.
 - `linear_layer.py` — fully-connected layer with Xavier-style init.
-- `relu_layer.py` — element-wise ReLU + its derivative.
+- `relu_layer.py` — element-wise parametric ReLU (α=0.01) + its derivative.
 - `softmax_cross_entropy_layer.py` — combined for gradient stability.
 - `utils.py`, `consts.py`, `funcs.py`, `iteration_data_point.py` — supporting bits (one-hot encoding, batching, metrics tracking).
 
@@ -44,7 +44,7 @@ In the recommended runtime (genai-vanilla jupyterhub, see [../docs/jupyterhub-in
 Or use papermill (the Tier-A target in the root Makefile):
 
 ```bash
-make run-tier-a   # re-runs this notebook plus the pytorch MNIST and GNN phase1
+make run-tier-a   # re-runs this notebook plus the pytorch MNIST, GNN phase1, and iris MLP
 ```
 
 **Tier A** (cheap, <5 min on CPU). Re-executed in CI on every PR.
