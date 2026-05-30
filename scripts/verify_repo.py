@@ -773,7 +773,7 @@ def check_execution(repo: Path, fast: bool) -> CheckResult:
                     ))
 
     # V7: every notebook scheduled in REQUIRED_SECTIONS that's also a
-    # papermill target (Tier A/B/C) must have a cell tagged 'parameters'.
+    # papermill target (Tier-A/B/C) must have a cell tagged 'parameters'.
     # Without the tag, `papermill -p NAME val` silently no-ops.
     for rel in REQUIRED_SECTIONS:
         nb = repo / rel

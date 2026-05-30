@@ -4,7 +4,11 @@
 .assistant-cache
 .pytest_cache
 .ruff_cache
+.mypy_cache
+.trunk
+.vscode
 .venv
+.DS_Store
 archive
 docs
 tests
