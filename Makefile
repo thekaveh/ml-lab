@@ -23,7 +23,8 @@ TIER_A := \
     text_generation-tinyshakespeare-transformer-pytorch/notebook.ipynb \
     peft-mnist-to-fmnist-dora-vs-lora-pytorch/notebook.ipynb \
     dim_reduction-iris-autoencoder-pytorch/notebook.ipynb \
-    tabular_regression-diabetes-mlp-pytorch/notebook.ipynb
+    tabular_regression-diabetes-mlp-pytorch/notebook.ipynb \
+    diffusion-mnist-ddpm-pytorch/notebook.ipynb
 
 TIER_B := \
     node_classification-reddit-gnn-pyg/phase2-model-selection-notebook1.ipynb \
