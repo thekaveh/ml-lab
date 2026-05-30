@@ -51,7 +51,7 @@ This repo follows [Keep a Changelog](https://keepachangelog.com/). Date format: 
 - `scripts/verify_repo.py` — YAML is now required (no silent fallback); `fast` kwarg dropped from `check_structure` / `check_docs` / `check_comments` (was dead); `typing.{Callable,Iterator}` → `collections.abc.{Callable,Iterator}`.
 - `Makefile` `run-tier-a` no longer hardcodes `SMOKE_TEST=1` — it now does the full refresh the help text always promised.
 - `requirements.txt` cleanup: `dataclasses` (stdlib backport) and `openapi` (unused/typo) removed; `torch` pin moved into `torch-requirements.txt`.
-- `Dockerfile` pinned to `quay.io/jupyter/datascience-notebook:python-3.11`; install order swapped to match CI (torch-requirements first); unused NLTK / spaCy downloads dropped.
+- `Dockerfile` pinned to `quay.io/jupyter/datascience-notebook:python-3.11`; install order swapped to match CI (torch-requirements first). (NLTK + spaCy downloads were briefly dropped here, then restored under `### Fixed` once the new NLP Tier-A tasks landed — see the third-round audit follow-up entry below.)
 - `.github/workflows/ci.yml` — iris notebook added to the Tier-A artifact upload; `cache: pip` extended to the smoke jobs.
 - New `Makefile` targets `make test` and `make verify` wrapping the CI invocations.
 - All per-task READMEs and the root README follow a canonical H2 hierarchy.
@@ -68,7 +68,7 @@ This repo follows [Keep a Changelog](https://keepachangelog.com/). Date format: 
 
 ### Fixed
 - **Overnight maintenance pass 2 (`worktree-overnight-2026-05-30` branch)**:
-  - `CONTRIBUTING.md:25` — internal link `[`nnx/src/nnx/`](nnx/src/nnx/)` was flagged Critical by the verify_repo crawler for any clone that skipped `git submodule update --init` (the common shallow-clone path). Reshaped to the GitHub URL `https://github.com/thekaveh/NNx/tree/main/src/nnx` so the link is robust to submodule state.
+  - `CONTRIBUTING.md:25` — internal link to the (unpopulated) submodule path `nnx/src/nnx/` was flagged Critical by the verify_repo crawler for any clone that skipped `git submodule update --init` (the common shallow-clone path). Reshaped to a GitHub URL pointing at `thekaveh/NNx`'s `src/nnx/` tree so the link is robust to submodule state.
   - `README.md` §2 Repository layout — the tree previously listed only 4 of the 21 active task folders. Collapsed to a single `<21 active task folders>` summary line pointing at §4.1 for the full list.
   - `archive/README.md:59` — "The active task index in the root README focuses on four smaller, more polished tasks (numpy MNIST, pytorch MNIST, GNN on Reddit, iris MLP)" was stale (true when the collection was 4 notebooks, misleading at 21). Reframed to "21 task folders covering vision, tabular, graph, NLP, generative, PEFT, MoE, JEPA, DPO and more".
   - `image_classification-mnist-ffnn-numpy/README.md:47` + `model_surgery-mnist-ffnn-pytorch/README.md:38` — `make run-tier-a   # re-runs this notebook plus the pytorch MNIST, GNN phase1, and iris MLP` was stale for the same reason. Rewrote both as `# re-runs this notebook in place, alongside the other Tier-A notebooks (see docs/env-setup.md §5)`.
