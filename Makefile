@@ -15,7 +15,24 @@ TIER_A := \
     image_classification-mnist-ffnn-numpy/notebook.ipynb \
     image_classification-mnist-ffnn-pytorch/notebook.ipynb \
     node_classification-reddit-gnn-pyg/phase1-dataset-exploration-notebook.ipynb \
-    tabular_classification-iris-mlp-pytorch/notebook.ipynb
+    tabular_classification-iris-mlp-pytorch/notebook.ipynb \
+    model_surgery-mnist-ffnn-pytorch/notebook.ipynb \
+    quantization-mnist-ffnn-pytorch/notebook.ipynb \
+    pruning-mnist-ffnn-pytorch/notebook.ipynb \
+    knowledge_distillation-mnist-ffnn-pytorch/notebook.ipynb \
+    text_generation-tinyshakespeare-transformer-pytorch/notebook.ipynb \
+    peft-mnist-to-fmnist-dora-vs-lora-pytorch/notebook.ipynb \
+    dim_reduction-iris-autoencoder-pytorch/notebook.ipynb \
+    tabular_regression-diabetes-mlp-pytorch/notebook.ipynb \
+    diffusion-mnist-ddpm-pytorch/notebook.ipynb \
+    moe-fmnist-mixture-of-experts-pytorch/notebook.ipynb \
+    clustering-iris-kmeans-vs-ae-pytorch/notebook.ipynb \
+    link_prediction-karate-graphsage-pyg/notebook.ipynb \
+    community_detection-karate-louvain-vs-gnn-pyg/notebook.ipynb \
+    text_classification-agnews-spacy-mlp-pytorch/notebook.ipynb \
+    sentiment_classification-vader-mlp-pytorch/notebook.ipynb \
+    preference_alignment-toy-dpo-pytorch/notebook.ipynb \
+    self_supervised-fmnist-jepa-pytorch/notebook.ipynb
 
 TIER_B := \
     node_classification-reddit-gnn-pyg/phase2-model-selection-notebook1.ipynb \

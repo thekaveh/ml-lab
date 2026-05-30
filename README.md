@@ -82,6 +82,23 @@ See [docs/env-setup.md](docs/env-setup.md) for environment details.
 | [image_classification-mnist-ffnn-pytorch/](image_classification-mnist-ffnn-pytorch/) | Image classification | MNIST | Feed-forward NN | PyTorch (via nnx) |
 | [node_classification-reddit-gnn-pyg/](node_classification-reddit-gnn-pyg/) | Node classification | Reddit2 | GNN (GraphConv, GraphSAGE, GAT) | PyTorch Geometric (via nnx) |
 | [tabular_classification-iris-mlp-pytorch/](tabular_classification-iris-mlp-pytorch/) | Tabular classification | Iris | Feed-forward NN | PyTorch (via nnx) |
+| [model_surgery-mnist-ffnn-pytorch/](model_surgery-mnist-ffnn-pytorch/) | Model surgery (Net2Net) | MNIST | Feed-forward NN | PyTorch (via nnx) |
+| [quantization-mnist-ffnn-pytorch/](quantization-mnist-ffnn-pytorch/) | Quantization (PTQ + QAT) | MNIST | Feed-forward NN | PyTorch (via nnx) + torchao |
+| [pruning-mnist-ffnn-pytorch/](pruning-mnist-ffnn-pytorch/) | Pruning (magnitude sparsity sweep) | MNIST | Feed-forward NN | PyTorch (via nnx) |
+| [knowledge_distillation-mnist-ffnn-pytorch/](knowledge_distillation-mnist-ffnn-pytorch/) | Knowledge distillation (born-again) | MNIST | Feed-forward NN | PyTorch (via nnx) |
+| [text_generation-tinyshakespeare-transformer-pytorch/](text_generation-tinyshakespeare-transformer-pytorch/) | Text generation (autoregressive LM) | TinyShakespeare (embedded) | Decoder-only transformer | PyTorch (via nnx) |
+| [peft-mnist-to-fmnist-dora-vs-lora-pytorch/](peft-mnist-to-fmnist-dora-vs-lora-pytorch/) | PEFT cross-task adaptation (LoRA vs DoRA) | MNIST → Fashion-MNIST | Feed-forward NN + LoRA / DoRA adapters | PyTorch (via nnx) |
+| [dim_reduction-iris-autoencoder-pytorch/](dim_reduction-iris-autoencoder-pytorch/) | Dimensionality reduction (PCA vs autoencoder) | Iris | Autoencoder (FFN with input_dim==output_dim) | PyTorch (via nnx) + sklearn |
+| [tabular_regression-diabetes-mlp-pytorch/](tabular_regression-diabetes-mlp-pytorch/) | Tabular regression | Diabetes | Feed-forward MLP + sklearn baselines | PyTorch (via nnx) + sklearn |
+| [diffusion-mnist-ddpm-pytorch/](diffusion-mnist-ddpm-pytorch/) | Generative (DDPM diffusion) | MNIST | DiffusionMLP denoiser (no U-Net) | PyTorch (via nnx) |
+| [moe-fmnist-mixture-of-experts-pytorch/](moe-fmnist-mixture-of-experts-pytorch/) | Mixture-of-Experts classification | Fashion-MNIST | FeedFwdNN + MoELinear (4 experts, top-2 routing) | PyTorch (via nnx) |
+| [clustering-iris-kmeans-vs-ae-pytorch/](clustering-iris-kmeans-vs-ae-pytorch/) | Unsupervised clustering | Iris | KMeans on raw features vs on AE latent | PyTorch (via nnx) + sklearn |
+| [link_prediction-karate-graphsage-pyg/](link_prediction-karate-graphsage-pyg/) | Link prediction (GNN encoder) | Zachary Karate Club | GraphSAGE + dot-product scorer | PyTorch Geometric |
+| [community_detection-karate-louvain-vs-gnn-pyg/](community_detection-karate-louvain-vs-gnn-pyg/) | Community detection (classical vs GNN) | Zachary Karate Club | Louvain vs GraphSAGE+KMeans | PyTorch Geometric + python-louvain |
+| [text_classification-agnews-spacy-mlp-pytorch/](text_classification-agnews-spacy-mlp-pytorch/) | Text classification (4-topic) | Embedded AG-News-style corpus | spaCy + bag-of-words + MLP | PyTorch (via nnx) + spaCy + sklearn |
+| [sentiment_classification-vader-mlp-pytorch/](sentiment_classification-vader-mlp-pytorch/) | Sentiment classification (rule vs neural) | Embedded review corpus | VADER (lexicon) vs MLP | PyTorch (via nnx) + nltk + spaCy + sklearn |
+| [preference_alignment-toy-dpo-pytorch/](preference_alignment-toy-dpo-pytorch/) | Preference alignment (DPO) | Embedded 16-triplet preference corpus | Tiny TransformerNN (ref + policy) | PyTorch (via nnx) |
+| [self_supervised-fmnist-jepa-pytorch/](self_supervised-fmnist-jepa-pytorch/) | Self-supervised (I-JEPA) + linear probe | Fashion-MNIST | ViT + EMA target + JEPA predictor | PyTorch (via nnx) |
 
 > **Tip:** GitHub may show "Unable to render code block" on output cells with large matplotlib PNGs. [Browse this repo on nbviewer](https://nbviewer.org/github/thekaveh/ml-lab/tree/main/) for full rendering of any notebook.
 
