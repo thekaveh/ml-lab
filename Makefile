@@ -19,7 +19,8 @@ TIER_A := \
     model_surgery-mnist-ffnn-pytorch/notebook.ipynb \
     quantization-mnist-ffnn-pytorch/notebook.ipynb \
     pruning-mnist-ffnn-pytorch/notebook.ipynb \
-    knowledge_distillation-mnist-ffnn-pytorch/notebook.ipynb
+    knowledge_distillation-mnist-ffnn-pytorch/notebook.ipynb \
+    text_generation-tinyshakespeare-transformer-pytorch/notebook.ipynb
 
 TIER_B := \
     node_classification-reddit-gnn-pyg/phase2-model-selection-notebook1.ipynb \
