@@ -24,6 +24,7 @@ active_task_dirs:
   - text_classification-agnews-spacy-mlp-pytorch
   - sentiment_classification-vader-mlp-pytorch
   - preference_alignment-toy-dpo-pytorch
+  - self_supervised-fmnist-jepa-pytorch
 
 # Required top-level section headings (markdown H1 `# N. <name>`) per notebook.
 # Adding a new notebook means adding an entry here. Otherwise the default
@@ -223,6 +224,13 @@ required_sections:
     - "4. Model"
     - "5. Training"
     - "6. Evaluation & Results"
+  self_supervised-fmnist-jepa-pytorch/notebook.ipynb:
+    - "1. Overview"
+    - "2. Environment & Setup"
+    - "3. Data"
+    - "4. Model"
+    - "5. Training"
+    - "6. Evaluation & Results"
 
 # Notebooks Tier-A runs in-place (refreshes outputs in CI).
 # Keep this list in sync with Makefile's TIER_A variable.
@@ -247,3 +255,4 @@ tier_a_notebooks:
   - text_classification-agnews-spacy-mlp-pytorch/notebook.ipynb
   - sentiment_classification-vader-mlp-pytorch/notebook.ipynb
   - preference_alignment-toy-dpo-pytorch/notebook.ipynb
+  - self_supervised-fmnist-jepa-pytorch/notebook.ipynb
