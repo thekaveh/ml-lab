@@ -25,7 +25,8 @@ TIER_A := \
     dim_reduction-iris-autoencoder-pytorch/notebook.ipynb \
     tabular_regression-diabetes-mlp-pytorch/notebook.ipynb \
     diffusion-mnist-ddpm-pytorch/notebook.ipynb \
-    moe-fmnist-mixture-of-experts-pytorch/notebook.ipynb
+    moe-fmnist-mixture-of-experts-pytorch/notebook.ipynb \
+    clustering-iris-kmeans-vs-ae-pytorch/notebook.ipynb
 
 TIER_B := \
     node_classification-reddit-gnn-pyg/phase2-model-selection-notebook1.ipynb \
