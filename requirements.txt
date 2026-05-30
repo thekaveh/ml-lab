@@ -37,6 +37,7 @@ networkx
 scikit-learn
 tqdm  # direct: image_classification-mnist-ffnn-numpy/feed_fwd_nn.py training-loop progress bar
 nbformat  # direct: scripts/{verify_repo,edit_notebook_markdown,inject_smoke_test_cell}.py + tests/
+nltk  # direct: sentiment_classification-vader-mlp-pytorch/notebook.ipynb (SentimentIntensityAnalyzer)
 
 # NNx — local submodule, editable install
 -e ./nnx
