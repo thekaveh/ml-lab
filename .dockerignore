@@ -1,0 +1,16 @@
+.git
+.github
+.claude
+.assistant-cache
+.pytest_cache
+.ruff_cache
+.venv
+archive
+docs
+tests
+vendor
+**/data
+**/runs
+**/checkpoints
+**/repos
+**/__pycache__
