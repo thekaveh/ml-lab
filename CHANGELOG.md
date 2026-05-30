@@ -4,18 +4,6 @@ This repo follows [Keep a Changelog](https://keepachangelog.com/). Date format: 
 
 ## [Unreleased]
 
-### Fixed
-- **CI gaps for the 17 new tasks (audit follow-up)**:
-  - `.github/workflows/ci.yml` `tier-a-papermill` now downloads `en_core_web_sm` via `python -m spacy download` (required by `text_classification-agnews-spacy-mlp-pytorch` + `sentiment_classification-vader-mlp-pytorch`); pre-downloads NLTK's `vader_lexicon`; gets an explicit `timeout-minutes: 30` cap so the issue-#3 phase1 hang fails fast instead of burning GH's default 6-hour timeout; the artifact-upload `path:` lists all 21 Tier-A notebooks (was 4 only — refreshed outputs from the 17 new notebooks were being silently discarded).
-  - `requirements.txt` — add `torchao>=0.17` (was a missing direct dep for `quantization-mnist-ffnn-pytorch`).
-  - `pytest-nnx-surface` job no longer `pip install pytest`s separately — pytest is already in `requirements.txt`.
-- **Doc contradictions**:
-  - `sentiment_classification-vader-mlp-pytorch/README.md` §5 + §6 — reframe stale "nltk NOT in requirements.txt" claim to the correct "nltk is in reqs; `vader_lexicon` is the separate-download caveat".
-  - `text_classification-agnews-spacy-mlp-pytorch/README.md` §5 + §6 — clarify the `spacy` (package, in reqs) vs `en_core_web_sm` (model, separate download) distinction; reference the new CI step.
-  - `dim_reduction-iris-autoencoder-pytorch/README.md` §7 — was framed as the AE-checkpoint "producer" for `clustering-iris-kmeans-vs-ae-pytorch`; reframe as "sibling" since `runs/` is gitignored and clustering retrains the AE inline at runtime.
-  - `model_surgery-mnist-ffnn-pytorch/README.md` §1 — fix broken self-anchor `[§4](#4-model)` that pointed at the *notebook's* §4 (Model) but tried to resolve in the *README* (where §4 is "How to run").
-- **`README.md` §8 Roadmap** — mark `diffusion-mnist-ddpm-pytorch` as shipped (✓ exact slug match in PR #4); add disambiguation notes on `text_classification-imdb-distilbert-hf`, `link_prediction-citation-graphsage-pyg`, `generative-mnist-vae-pytorch` so readers don't conflate them with the pedagogically-related shipped tasks (`text_classification-agnews-spacy-mlp`, `link_prediction-karate-graphsage-pyg`, `diffusion-mnist-ddpm-pytorch` respectively).
-
 ### Added
 - `self_supervised-fmnist-jepa-pytorch/` — new Tier-A single-notebook task. First in-repo demo of the nnx megamerge I-JEPA self-supervised stack: `ViTNN(image_size=28, patch_size=4, in_channels=1, d_model=64, n_layers=2, n_heads=4)` context encoder (~103k params); `build_target_encoder(model.net)` for the frozen EMA target; `JEPAPredictor(embed_dim, n_patches, predictor_dim=32, n_layers=2, n_heads=2)` (~30k params) attached to `model.net` so the optimizer picks up its params jointly; `random_block_mask(n_patches, grid_size=7)` for the context/target patch split; `jepa_train_step_factory(target_encoder, predictor, mask_fn, ema_momentum=0.996)` to wire everything together. Phase 2: `LinearProbe(encoder, embed_dim, num_classes)` freezes the pretrained encoder and trains only a `Linear(64 → 10)` head on top of mean-pooled patch embeddings — the standard SSL evaluation. Substituted Fashion-MNIST for the paper's ImageNet / example's CIFAR-10 (already in the collection, CPU-feasible at Tier-A budget). Recorded run (~90 s CPU, 2 JEPA epochs + 5 probe epochs): JEPA pretrain loss 1.0416 → 0.3162; linear-probe val accuracy 70.62% → 74.43% (well above the 10% random baseline — SSL proof-of-life). Heaviest Tier-A notebook in the collection.
 - `preference_alignment-toy-dpo-pytorch/` — new Tier-A single-notebook task. First in-repo demo of `nnx.dpo_train_step_factory` + `nnx.NNPreferenceDataset` (Direct Preference Optimization, Rafailov et al., 2023). Tiny `TransformerNN` (`d_model=16`, `n_layers=2`, `n_heads=2`); both `ref_model` (frozen) and `policy` (trained) start from the same init. 16 hand-written `(prompt, chosen, rejected)` triplets — cheerful chosen, gloomy rejected. The DPO factory automatically freezes the reference at construction (`requires_grad=False` + `eval()` mode); the nnx test suite enforces bit-for-bit reference invariance. Recorded run (~7 s CPU, 48 iterations over 12 epochs, β=0.1): DPO loss 0.6931 → 0.0039; mean chosen−rejected log-prob gap +2.1434 → +59.6521 (the DPO contract — gap must strictly increase — verified). §6.3 scaling levers (real preference data, β-sweep, DPO variants IPO/KTO).
@@ -51,7 +39,38 @@ This repo follows [Keep a Changelog](https://keepachangelog.com/). Date format: 
 - `CONTRIBUTING.md`, `CHANGELOG.md`.
 - CI: weekly schedule trigger for `smoke-tier-b` and `smoke-tier-c` jobs.
 
+### Changed
+- `scripts/verify_repo.py` — YAML is now required (no silent fallback); `fast` kwarg dropped from `check_structure` / `check_docs` / `check_comments` (was dead); `typing.{Callable,Iterator}` → `collections.abc.{Callable,Iterator}`.
+- `Makefile` `run-tier-a` no longer hardcodes `SMOKE_TEST=1` — it now does the full refresh the help text always promised.
+- `requirements.txt` cleanup: `dataclasses` (stdlib backport) and `openapi` (unused/typo) removed; `torch` pin moved into `torch-requirements.txt`.
+- `Dockerfile` pinned to `quay.io/jupyter/datascience-notebook:python-3.11`; install order swapped to match CI (torch-requirements first); unused NLTK / spaCy downloads dropped.
+- `.github/workflows/ci.yml` — iris notebook added to the Tier-A artifact upload; `cache: pip` extended to the smoke jobs.
+- New `Makefile` targets `make test` and `make verify` wrapping the CI invocations.
+- All per-task READMEs and the root README follow a canonical H2 hierarchy.
+- `.gitignore` broadened: covers `docs/superpowers/`, `.mypy_cache/`, `.trunk/`, `.vscode/`, `.pytest_cache/`, `plan-*.md`, `notes-*.md`, `audit-*.md`.
+- `nnx` submodule pointer bumped from `4ec08aa` to `6ce1122` — 21-commit hop adding `train_step_fn` hook on `NNModel.train`, fine-tuning infra (`freeze`/`unfreeze`/`load_pretrained`/`NNParamGroupSpec`), multi-optimizer `Trainer` (GAN/actor-critic/EBM), diffusion (`NoiseSchedulers`/`DiffusionMLP`/`sample`), training paradigms (`kd`/`simclr`/`mixup`/`cutmix` step factories), PEFT (`LoRALinear`/`apply_lora_to`/`AdapterLayer`), seeding (`nnx.set_seed`/`dataloader_worker_init_fn`/`env_snapshot`), `NNTabularDataset` (pandas DataFrame → loaders), opt-in `TensorBoardCallback`/`WandbCallback`, ONNX export (`NNModel.to_onnx`), and back-compat additions (`PredictResult` NamedTuple, `evaluate(extra_metrics=)`). Earlier in this cycle the pointer also moved through `ae4e2f4` (thekaveh/NNx#1 + #2): see "nnx via submodule" below.
+- `pre-cleanup-baseline` tag rolled forward to incorporate the audit-miss fix (deliberate, audited; verifier check E5 continues enforcing Tier-C **code-cell source** equality from the new tag forward — markdown and embedded outputs are not compared).
+
+### Removed
+- `common/` — leftover from the pre-nnx era; replaced by the `nnx` submodule.
+- `.DS_Store` at repo root.
+
 ### Fixed
+- **Second-round audit follow-up**:
+  - `docs/env-setup.md` §5 Tier mapping — was stale at 4 notebooks; expanded to the full 21-notebook Tier-A list (matching `Makefile` `TIER_A` and `scripts/verify_repo_config.yaml` `tier_a_notebooks`). Adds a header note that Makefile + YAML are the authoritative source if they drift.
+  - `image_classification-mnist-ffnn-pytorch/README.md` line 42 — `**Tier A**` → `**Tier-A**` to match line 36's hyphenated form (within-doc consistency).
+  - `docs/FINDINGS-NNX.md` — added 4 upstream-PR-ready findings collected from building the 17 new tasks: (1) `NNDataset` default `batch_size` packs whole train set into one batch (affects diffusion / MoE / transformer / JEPA); (2) `nnx.deepen` is function-preserving only for ReLU (raises `ValueError` on leaky_relu — the default); (3) `NNTabularDataset` coerces targets to `torch.long` (classification-only — regression must build DataLoaders manually); (4) `EarlyStopping` default `monitor="val_edp.error"` doesn't exist on regression EDPs.
+  - `CHANGELOG.md` `[Unreleased]` section order — had two `### Fixed` blocks (one prepended by the prior pass, one original) AND non-canonical Keep-a-Changelog order. Merged into a single `### Fixed` and reordered to canonical Added / Changed / Removed / Fixed (+ the repo-custom `### nnx via submodule` last).
+- **CI gaps for the 17 new tasks (audit follow-up)**:
+  - `.github/workflows/ci.yml` `tier-a-papermill` now downloads `en_core_web_sm` via `python -m spacy download` (required by `text_classification-agnews-spacy-mlp-pytorch` + `sentiment_classification-vader-mlp-pytorch`); pre-downloads NLTK's `vader_lexicon`; gets an explicit `timeout-minutes: 30` cap so the issue-#3 phase1 hang fails fast instead of burning GH's default 6-hour timeout; the artifact-upload `path:` lists all 21 Tier-A notebooks (was 4 only — refreshed outputs from the 17 new notebooks were being silently discarded).
+  - `requirements.txt` — add `torchao>=0.17` (was a missing direct dep for `quantization-mnist-ffnn-pytorch`).
+  - `pytest-nnx-surface` job no longer `pip install pytest`s separately — pytest is already in `requirements.txt`.
+- **Doc contradictions**:
+  - `sentiment_classification-vader-mlp-pytorch/README.md` §5 + §6 — reframe stale "nltk NOT in requirements.txt" claim to the correct "nltk is in reqs; `vader_lexicon` is the separate-download caveat".
+  - `text_classification-agnews-spacy-mlp-pytorch/README.md` §5 + §6 — clarify the `spacy` (package, in reqs) vs `en_core_web_sm` (model, separate download) distinction; reference the new CI step.
+  - `dim_reduction-iris-autoencoder-pytorch/README.md` §7 — was framed as the AE-checkpoint "producer" for `clustering-iris-kmeans-vs-ae-pytorch`; reframe as "sibling" since `runs/` is gitignored and clustering retrains the AE inline at runtime.
+  - `model_surgery-mnist-ffnn-pytorch/README.md` §1 — fix broken self-anchor `[§4](#4-model)` that pointed at the *notebook's* §4 (Model) but tried to resolve in the *README* (where §4 is "How to run").
+- **`README.md` §8 Roadmap** — mark `diffusion-mnist-ddpm-pytorch` as shipped (✓ exact slug match in PR #4); add disambiguation notes on `text_classification-imdb-distilbert-hf`, `link_prediction-citation-graphsage-pyg`, `generative-mnist-vae-pytorch` so readers don't conflate them with the pedagogically-related shipped tasks (`text_classification-agnews-spacy-mlp`, `link_prediction-karate-graphsage-pyg`, `diffusion-mnist-ddpm-pytorch` respectively).
 - `node_classification-reddit-gnn-pyg/phase2-model-selection-notebook{1,2,3}.ipynb` cell[4] — rewrote model + train_params construction to the canonical pattern (was using `NNModel(device=, net=)` and `NNTrainParams(learning_rate=, weight_decay=)`, neither of which exist in any nnx version). Banner imports for `Optims`, `NNOptimParams`, `NNModelParams`, `Devices`, `Losses`, `Nets` added per notebook. Tier-B papermill smoke now passes.
 - `node_classification-reddit-gnn-pyg/phase3-main-model-training-and-eval-notebook{,2,3,4}.ipynb` cells [6] + [8] — same canonical rewrite, plus dropping invented `snapshot_x`/`snapshot_interval` kwargs (these never existed in nnx; the `Checkpoints` lifecycle is the replacement). cell[13] snapshot-consumer visualizations commented out with a leading note (followup to adapt to the `NNCheckpoint` lifecycle). Tier-C papermill smoke now passes.
 - `node_classification-reddit-gnn-pyg/phase{2,3}-*.ipynb` — applied `rewrite_imports.py`'s new symbol-consolidation pass; `GraphAttNNParams` references removed; `from nnx.nn.params.nn_params import NNParams` injected at cell top where needed.
@@ -78,22 +97,6 @@ This repo follows [Keep a Changelog](https://keepachangelog.com/). Date format: 
   - `scripts/verify_repo_config.yaml` — one-line comment noting `tier_a_notebooks` must stay in sync with Makefile's `TIER_A`.
   - `README.md` §3.1 quick-start — replace standalone `scripts/setup-in-jupyter.sh` with the `docker exec -it <jupyterhub-container> /home/jovyan/work/ml-lab/scripts/setup-in-jupyter.sh` form already canonical in `docs/env-setup.md` §1.2 and `docs/jupyterhub-integration.md`; the prior shape sat next to the host-shell `start-jupyterhub.sh` and would have invited the reader to run it in the wrong shell.
   - `requirements.txt` — promote `tqdm` (used by `image_classification-mnist-ffnn-numpy/feed_fwd_nn.py` for the training-loop progress bar) and `nbformat` (used by `scripts/{verify_repo,edit_notebook_markdown,inject_smoke_test_cell}.py` and the test suite) from transitive (via papermill / jupyter) to direct declarations.
-
-### Removed
-- `common/` — leftover from the pre-nnx era; replaced by the `nnx` submodule.
-- `.DS_Store` at repo root.
-
-### Changed
-- `scripts/verify_repo.py` — YAML is now required (no silent fallback); `fast` kwarg dropped from `check_structure` / `check_docs` / `check_comments` (was dead); `typing.{Callable,Iterator}` → `collections.abc.{Callable,Iterator}`.
-- `Makefile` `run-tier-a` no longer hardcodes `SMOKE_TEST=1` — it now does the full refresh the help text always promised.
-- `requirements.txt` cleanup: `dataclasses` (stdlib backport) and `openapi` (unused/typo) removed; `torch` pin moved into `torch-requirements.txt`.
-- `Dockerfile` pinned to `quay.io/jupyter/datascience-notebook:python-3.11`; install order swapped to match CI (torch-requirements first); unused NLTK / spaCy downloads dropped.
-- `.github/workflows/ci.yml` — iris notebook added to the Tier-A artifact upload; `cache: pip` extended to the smoke jobs.
-- New `Makefile` targets `make test` and `make verify` wrapping the CI invocations.
-- All per-task READMEs and the root README follow a canonical H2 hierarchy.
-- `.gitignore` broadened: covers `docs/superpowers/`, `.mypy_cache/`, `.trunk/`, `.vscode/`, `.pytest_cache/`, `plan-*.md`, `notes-*.md`, `audit-*.md`.
-- `nnx` submodule pointer bumped from `4ec08aa` to `6ce1122` — 21-commit hop adding `train_step_fn` hook on `NNModel.train`, fine-tuning infra (`freeze`/`unfreeze`/`load_pretrained`/`NNParamGroupSpec`), multi-optimizer `Trainer` (GAN/actor-critic/EBM), diffusion (`NoiseSchedulers`/`DiffusionMLP`/`sample`), training paradigms (`kd`/`simclr`/`mixup`/`cutmix` step factories), PEFT (`LoRALinear`/`apply_lora_to`/`AdapterLayer`), seeding (`nnx.set_seed`/`dataloader_worker_init_fn`/`env_snapshot`), `NNTabularDataset` (pandas DataFrame → loaders), opt-in `TensorBoardCallback`/`WandbCallback`, ONNX export (`NNModel.to_onnx`), and back-compat additions (`PredictResult` NamedTuple, `evaluate(extra_metrics=)`). Earlier in this cycle the pointer also moved through `ae4e2f4` (thekaveh/NNx#1 + #2): see "nnx via submodule" below.
-- `pre-cleanup-baseline` tag rolled forward to incorporate the audit-miss fix (deliberate, audited; verifier check E5 continues enforcing Tier-C **code-cell source** equality from the new tag forward — markdown and embedded outputs are not compared).
 
 ### nnx via submodule
 The `nnx` submodule (thekaveh/NNx) advanced two releases in this cycle:
