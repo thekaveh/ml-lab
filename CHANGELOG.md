@@ -56,6 +56,12 @@ This repo follows [Keep a Changelog](https://keepachangelog.com/). Date format: 
 - `.DS_Store` at repo root.
 
 ### Fixed
+- **Third-round audit follow-up**:
+  - `Dockerfile` — was missing the spaCy `en_core_web_sm` + NLTK `vader_lexicon` downloads that two Tier-A NLP tasks need. CI workflow now does these, but the local-Docker path in `docs/env-setup.md` §2 (`docker build -t ml-lab . && docker run … ml-lab`) didn't — users would hit `OSError: Can't find model 'en_core_web_sm'` on the first NLP notebook. Add a final `RUN` step mirroring CI.
+  - `docs/env-setup.md` §3 (Local Python venv) — install block didn't mention the two one-time downloads; only `pip install -r requirements.txt` was shown. Add the commands inline + a §3 caveat that the Docker path in §2 bakes them in.
+  - `CONTRIBUTING.md` — new §5.1 "One-time NLP-task setup" documenting the spaCy + NLTK commands so contributors don't hit `ModuleNotFoundError` / `LookupError` when running `make verify` / `make test` for the first time.
+  - `.github/workflows/ci.yml` `tier-a-papermill` `timeout-minutes` — bumped 30 → 90 after the first PR-#5 CI run hit the cap mid-`image_classification-mnist-ffnn-numpy` (Linux GH runner is 3-4× slower than macOS for hand-coded numpy training; my "~7 min cumulative" estimate was from macOS). 90 min gives the heaviest notebook room + budget for phase1 + headroom; still fails fast vs default 6 h.
+  - `CHANGELOG.md` `[Unreleased]` `### Added` dim_reduction entry — was framed as the AE-checkpoint "Producer for the queued candidate #8" but #8 shipped in PR #4 and retrains the AE inline (no cross-notebook checkpoint coupling at runtime). Reframe as "sibling".
 - **Second-round audit follow-up**:
   - `docs/env-setup.md` §5 Tier mapping — was stale at 4 notebooks; expanded to the full 21-notebook Tier-A list (matching `Makefile` `TIER_A` and `scripts/verify_repo_config.yaml` `tier_a_notebooks`). Adds a header note that Makefile + YAML are the authoritative source if they drift.
   - `image_classification-mnist-ffnn-pytorch/README.md` line 42 — `**Tier A**` → `**Tier-A**` to match line 36's hyphenated form (within-doc consistency).
