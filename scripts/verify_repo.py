@@ -130,7 +130,7 @@ _RUNTIME_ONLY_MODULES = frozenset({
     "matplotlib", "seaborn", "pandas", "sklearn", "scipy",
     "networkx", "community",
     "nnx",
-    "plotly", "tqdm", "rich",
+    "tqdm",
 })
 
 
