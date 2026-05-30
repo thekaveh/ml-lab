@@ -629,11 +629,14 @@ def export_phase_b_candidates(repo: Path, out_path: Path) -> int:
             })
 
     out_path.parent.mkdir(parents=True, exist_ok=True)
-    out_path.write_text(json.dumps({
-        "schema_version": 1,
-        "candidate_count": len(candidates),
-        "candidates": candidates,
-    }, indent=2))
+    out_path.write_text(
+        json.dumps({
+            "schema_version": 1,
+            "candidate_count": len(candidates),
+            "candidates": candidates,
+        }, indent=2),
+        encoding="utf-8",
+    )
     return len(candidates)
 
 
@@ -926,7 +929,7 @@ def main(argv: list[str] | None = None) -> int:
     out_text = json.dumps(payload, indent=2)
     if args.out:
         args.out.parent.mkdir(parents=True, exist_ok=True)
-        args.out.write_text(out_text)
+        args.out.write_text(out_text, encoding="utf-8")
     else:
         print(out_text)
 
